@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
@@ -66,6 +66,7 @@ const initialDocuments: MarkdownDocument[] = [
 export function MarkdownViewerActivity() {
   const [documents, setDocuments] = useState(initialDocuments);
   const [activeDocumentId, setActiveDocumentId] = useState(initialDocuments[0].id);
+  const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
 
   const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
   const files = documents.map((document) => ({
@@ -88,19 +89,107 @@ export function MarkdownViewerActivity() {
     }
   }
 
+  async function ingestFiles(fileList: FileList | File[]) {
+    const droppedFiles = Array.from(fileList);
+
+    if (droppedFiles.length === 0) {
+      return;
+    }
+
+    const existingNames = new Set(documents.map((document) => document.name));
+    const importedDocuments: MarkdownDocument[] = [];
+
+    for (const file of droppedFiles) {
+      const name = uniqueDocumentName(existingNames, file.name || "untitled.md");
+      existingNames.add(name);
+      importedDocuments.push({
+        id: crypto.randomUUID(),
+        name,
+        content: await file.text()
+      });
+    }
+
+    setDocuments((currentDocuments) => [...currentDocuments, ...importedDocuments]);
+    setActiveDocumentId(importedDocuments[importedDocuments.length - 1].id);
+  }
+
+  function handleDragEnter(target: "sidebar" | "editor") {
+    return (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      setDropTarget(target);
+    };
+  }
+
+  function handleDragOver(event: DragEvent<HTMLElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+
+    setDropTarget(null);
+  }
+
+  function handleDrop() {
+    return async (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setDropTarget(null);
+      await ingestFiles(event.dataTransfer.files);
+    };
+  }
+
   return (
     <>
-      <ActivitySidebar title="MARKDOWN VIEWER">
-        <ActivityTree items={explorerItems} onSelect={(item) => selectDocument(item.name)} />
-      </ActivitySidebar>
+      <div
+        className={`markdown-viewer__dropzone markdown-viewer__dropzone--sidebar ${
+          dropTarget === "sidebar" ? "markdown-viewer__dropzone--active" : ""
+        }`}
+        onDragEnter={handleDragEnter("sidebar")}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop()}
+      >
+        <ActivitySidebar title="MARKDOWN VIEWER">
+          <ActivityTree items={explorerItems} onSelect={(item) => selectDocument(item.name)} />
+        </ActivitySidebar>
+      </div>
 
-      <main className="editor-shell">
+      <main
+        className={`editor-shell markdown-viewer__dropzone markdown-viewer__dropzone--editor ${
+          dropTarget === "editor" ? "markdown-viewer__dropzone--active" : ""
+        }`}
+        onDragEnter={handleDragEnter("editor")}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop()}
+      >
         <ActivityTabs files={files} onSelect={(file) => selectDocument(file.name)} />
 
         <section className="editor-panel editor-panel--compact">
-          <ActivityEditor label={activeDocument.name} lines={editorLines} />
+          <ActivityEditor label={activeDocument.name} lines={activeDocument.content.split(/\r?\n/)} />
         </section>
       </main>
     </>
   );
+}
+
+function uniqueDocumentName(existingNames: Set<string>, baseName: string) {
+  if (!existingNames.has(baseName)) {
+    return baseName;
+  }
+
+  const match = /^(.*?)(\.[^.]+)?$/.exec(baseName);
+  const stem = match?.[1] ?? baseName;
+  const extension = match?.[2] ?? "";
+  let suffix = 2;
+
+  while (existingNames.has(`${stem} (${suffix})${extension}`)) {
+    suffix += 1;
+  }
+
+  return `${stem} (${suffix})${extension}`;
 }
