@@ -69,7 +69,9 @@ export function MarkdownViewerActivity() {
   const [openDocumentIds, setOpenDocumentIds] = useState(initialDocuments.map((document) => document.id));
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
 
-  const openDocuments = documents.filter((document) => openDocumentIds.includes(document.id));
+  const openDocuments = openDocumentIds
+    .map((documentId) => documents.find((document) => document.id === documentId))
+    .filter((document): document is MarkdownDocument => Boolean(document));
   const activeDocument = openDocuments.find((document) => document.id === activeDocumentId) ?? openDocuments[0] ?? null;
   const files = openDocuments.map((document) => ({
     name: document.name,
