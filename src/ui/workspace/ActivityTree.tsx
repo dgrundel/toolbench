@@ -5,9 +5,10 @@ type ActivityTreeProps = {
   header?: string;
   count?: string | number;
   onSelect?: (item: WorkspaceTreeItem) => void;
+  onDelete?: (item: WorkspaceTreeItem) => void;
 };
 
-export function ActivityTree({ items, header, count, onSelect }: ActivityTreeProps) {
+export function ActivityTree({ items, header, count, onSelect, onDelete }: ActivityTreeProps) {
   return (
     <section className="sidebar-section sidebar-section--tree">
       {header ? (
@@ -20,7 +21,7 @@ export function ActivityTree({ items, header, count, onSelect }: ActivityTreePro
       <div className="tree">
         {items.map((item) => (
           <div
-            key={item.name}
+            key={item.id ?? item.name}
             className={`tree__item tree__item--${item.type} ${item.active ? "tree__item--active" : ""}`}
             role={onSelect ? "button" : undefined}
             tabIndex={onSelect ? 0 : undefined}
@@ -36,10 +37,26 @@ export function ActivityTree({ items, header, count, onSelect }: ActivityTreePro
                 : undefined
             }
           >
-            <span className="tree__glyph" aria-hidden="true">
-              {item.type === "folder" ? "▸" : "•"}
+            <span className="tree__item-main">
+              <span className="tree__glyph" aria-hidden="true">
+                {item.type === "folder" ? "▸" : "•"}
+              </span>
+              <span>{item.name}</span>
             </span>
-            <span>{item.name}</span>
+            {onDelete ? (
+              <button
+                type="button"
+                className="tree__delete"
+                aria-label={`Delete ${item.name}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDelete(item);
+                }}
+              >
+                ×
+              </button>
+            ) : null}
           </div>
         ))}
       </div>

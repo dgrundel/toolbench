@@ -11,7 +11,7 @@ export function ActivityTabs({ files, onSelect, onClose }: ActivityTabsProps) {
     <div className="tab-strip" role="tablist" aria-label="Open files">
       {files.map((file) => (
         <button
-          key={file.name}
+          key={file.id ?? file.name}
           type="button"
           className={`tab ${file.active ? "tab--active" : ""}`}
           role="tab"

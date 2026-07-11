@@ -7,30 +7,35 @@ type StorageEstimate = {
   quota: number;
 };
 
+type ActivityProps = {
+  onStorageChange?: () => void;
+};
+
 type ActivityId = "markdown-viewer" | "demo";
 
 const activities: Array<{
   id: ActivityId;
   label: string;
   icon: string;
-  element: JSX.Element;
+  render: (props: ActivityProps) => JSX.Element;
 }> = [
   {
     id: "markdown-viewer",
     label: "Markdown Viewer",
     icon: "▣",
-    element: <MarkdownViewerActivity />
+    render: (props) => <MarkdownViewerActivity onStorageChange={props.onStorageChange} />
   },
   {
     id: "demo",
     label: "Demo",
     icon: "▢",
-    element: <DemoActivity />
+    render: () => <DemoActivity />
   }
 ];
 
 function useStorageQuota() {
   const [quota, setQuota] = useState<StorageEstimate | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,13 +60,16 @@ function useStorageQuota() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadCount]);
 
-  return quota;
+  return {
+    quota,
+    refresh: () => setReloadCount((count) => count + 1)
+  };
 }
 
 export default function App() {
-  const quota = useStorageQuota();
+  const { quota, refresh } = useStorageQuota();
   const [activeActivityId, setActiveActivityId] = useState<ActivityId>("markdown-viewer");
   const percentUsed =
     quota && quota.quota > 0 ? Math.min((quota.usage / quota.quota) * 100, 100) : 0;
@@ -90,7 +98,7 @@ export default function App() {
         ))}
       </aside>
 
-      {activeActivity.element}
+      {activeActivity.render({ onStorageChange: refresh })}
 
       <footer className="status-bar" aria-label="Status bar">
         <div className="status-quota">

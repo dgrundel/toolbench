@@ -1,97 +1,198 @@
-import { useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
+import {
+  deleteMarkdownDocument,
+  listMarkdownDocuments,
+  loadMarkdownDocument,
+  saveMarkdownDocument,
+  type MarkdownLibraryDocument,
+  type MarkdownLibrarySummary
+} from "../storage/markdownLibrary";
 
-type MarkdownDocument = {
-  id: string;
-  name: string;
-  content: string;
+type MarkdownViewerActivityProps = {
+  onStorageChange?: () => void;
 };
 
-const initialDocuments: MarkdownDocument[] = [];
-
-export function MarkdownViewerActivity() {
-  const [documents, setDocuments] = useState(initialDocuments);
+export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
+  const [storedDocuments, setStoredDocuments] = useState<MarkdownLibrarySummary[]>([]);
+  const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
-  const [openDocumentIds, setOpenDocumentIds] = useState<string[]>([]);
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
+  const openRequestIdRef = useRef(0);
+  const openRequestDocumentIdRef = useRef<string | null>(null);
+  const activeDocumentIdRef = useRef<string | null>(null);
 
-  const openDocuments = openDocumentIds
-    .map((documentId) => documents.find((document) => document.id === documentId))
-    .filter((document): document is MarkdownDocument => Boolean(document));
+  useEffect(() => {
+    activeDocumentIdRef.current = activeDocumentId;
+  }, [activeDocumentId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDocuments() {
+      try {
+        const records = await listMarkdownDocuments();
+
+        if (!cancelled) {
+          setStoredDocuments(records);
+        }
+      } catch (error) {
+        console.error("Failed to load markdown documents.", error);
+      }
+    }
+
+    void loadDocuments();
+
+    return () => {
+      cancelled = true;
+      openRequestIdRef.current += 1;
+    };
+  }, []);
+
   const activeDocument = openDocuments.find((document) => document.id === activeDocumentId) ?? openDocuments[0] ?? null;
   const files = openDocuments.map((document) => ({
+    id: document.id,
     name: document.name,
     kind: "md" as const,
     active: document.id === activeDocumentId
   }));
-  const explorerItems = documents.map((document) => ({
+  const explorerItems = storedDocuments.map((document) => ({
+    id: document.id,
     name: document.name,
     type: "file" as const,
     active: document.id === activeDocument?.id
   }));
   const editorLines = activeDocument?.content.split(/\r?\n/) ?? [];
 
-  function selectDocument(name: string) {
-    const selected = documents.find((document) => document.name === name);
+  async function refreshStoredDocuments() {
+    const records = await listMarkdownDocuments();
+    setStoredDocuments(records);
+  }
 
-    if (selected) {
-      setActiveDocumentId(selected.id);
-      setOpenDocumentIds((currentOpenDocumentIds) =>
-        currentOpenDocumentIds.includes(selected.id)
-          ? currentOpenDocumentIds
-          : [...currentOpenDocumentIds, selected.id]
+  async function openDocument(documentId: string) {
+    try {
+      const alreadyOpen = openDocuments.find((document) => document.id === documentId);
+
+      if (alreadyOpen) {
+        setActiveDocumentId(documentId);
+        return;
+      }
+
+      const requestId = ++openRequestIdRef.current;
+      openRequestDocumentIdRef.current = documentId;
+      const loadedDocument = await loadMarkdownDocument(documentId);
+
+      if (
+        !loadedDocument ||
+        requestId !== openRequestIdRef.current ||
+        openRequestDocumentIdRef.current !== documentId
+      ) {
+        return;
+      }
+
+      setOpenDocuments((currentOpenDocuments) =>
+        currentOpenDocuments.some((document) => document.id === loadedDocument.id)
+          ? currentOpenDocuments
+          : [...currentOpenDocuments, loadedDocument]
       );
+      openRequestDocumentIdRef.current = null;
+      setActiveDocumentId(loadedDocument.id);
+    } catch (error) {
+      console.error(`Failed to open markdown document ${documentId}.`, error);
     }
   }
 
-  function closeDocument(name: string) {
-    const selected = documents.find((document) => document.name === name);
+  function closeDocument(documentId: string) {
+    setOpenDocuments((currentOpenDocuments) => {
+      const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
 
-    if (!selected) {
-      return;
-    }
-
-    setOpenDocumentIds((currentOpenDocumentIds) => {
-      const nextOpenDocumentIds = currentOpenDocumentIds.filter((documentId) => documentId !== selected.id);
-
-      if (activeDocumentId === selected.id) {
-        const nextActiveDocumentId = nextOpenDocumentIds[0] ?? null;
-        setActiveDocumentId(nextActiveDocumentId);
+      if (nextIndex === -1) {
+        return currentOpenDocuments;
       }
 
-      return nextOpenDocumentIds;
+      const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
+
+      if (activeDocumentId === documentId) {
+        const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
+        setActiveDocumentId(nextActiveDocument?.id ?? null);
+      }
+
+      return nextOpenDocuments;
     });
   }
 
-  async function ingestFiles(fileList: FileList | File[]) {
-    const droppedFiles = Array.from(fileList);
+  async function deleteDocument(documentId: string) {
+    try {
+      if (openRequestDocumentIdRef.current === documentId) {
+        openRequestIdRef.current += 1;
+        openRequestDocumentIdRef.current = null;
+      }
 
-    if (droppedFiles.length === 0) {
-      return;
-    }
+      await deleteMarkdownDocument(documentId);
 
-    const existingNames = new Set(documents.map((document) => document.name));
-    const importedDocuments: MarkdownDocument[] = [];
+      setOpenDocuments((currentOpenDocuments) => {
+        const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
 
-    for (const file of droppedFiles) {
-      const name = uniqueDocumentName(existingNames, file.name || "untitled.md");
-      existingNames.add(name);
-      importedDocuments.push({
-        id: crypto.randomUUID(),
-        name,
-        content: await file.text()
+        if (nextIndex === -1) {
+          return currentOpenDocuments;
+        }
+
+        const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
+
+        if (activeDocumentIdRef.current === documentId) {
+          const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
+          setActiveDocumentId(nextActiveDocument?.id ?? null);
+        }
+
+        return nextOpenDocuments;
       });
-    }
 
-    setDocuments((currentDocuments) => [...currentDocuments, ...importedDocuments]);
-    setOpenDocumentIds((currentOpenDocumentIds) => [
-      ...currentOpenDocumentIds,
-      ...importedDocuments.map((document) => document.id)
-    ]);
-    setActiveDocumentId(importedDocuments[importedDocuments.length - 1].id);
+      await refreshStoredDocuments();
+    } catch (error) {
+      console.error(`Failed to delete markdown document ${documentId}.`, error);
+    } finally {
+      onStorageChange?.();
+    }
+  }
+
+  async function ingestFiles(fileList: FileList | File[]) {
+    try {
+      const droppedFiles = Array.from(fileList);
+
+      if (droppedFiles.length === 0) {
+        return;
+      }
+
+      const existingNames = new Set(storedDocuments.map((document) => document.name));
+      const importedDocuments: MarkdownLibraryDocument[] = [];
+
+      for (const file of droppedFiles) {
+        const name = uniqueDocumentName(existingNames, file.name || "untitled.md");
+        existingNames.add(name);
+        const content = await file.text();
+        const id = crypto.randomUUID();
+        const savedDocument = await saveMarkdownDocument({
+          id,
+          name,
+          content
+        });
+        importedDocuments.push({
+          ...savedDocument,
+          content
+        });
+      }
+
+      await refreshStoredDocuments();
+      setOpenDocuments((currentOpenDocuments) => [...currentOpenDocuments, ...importedDocuments]);
+      setActiveDocumentId(importedDocuments[importedDocuments.length - 1].id);
+    } catch (error) {
+      console.error("Failed to import markdown documents.", error);
+    } finally {
+      onStorageChange?.();
+    }
   }
 
   function handleDragEnter(target: "sidebar" | "editor") {
@@ -135,7 +236,13 @@ export function MarkdownViewerActivity() {
         onDrop={handleDrop()}
       >
         <ActivitySidebar title="MARKDOWN VIEWER">
-          <ActivityTree items={explorerItems} onSelect={(item) => selectDocument(item.name)} />
+          <ActivityTree
+            items={explorerItems}
+            header="FILES"
+            count={storedDocuments.length}
+            onSelect={(item) => openDocument(item.id ?? item.name)}
+            onDelete={(item) => deleteDocument(item.id ?? item.name)}
+          />
         </ActivitySidebar>
       </div>
 
@@ -150,8 +257,8 @@ export function MarkdownViewerActivity() {
       >
         <ActivityTabs
           files={files}
-          onSelect={(file) => selectDocument(file.name)}
-          onClose={(file) => closeDocument(file.name)}
+          onSelect={(file) => openDocument(file.id ?? file.name)}
+          onClose={(file) => closeDocument(file.id ?? file.name)}
         />
 
         <section className="editor-panel editor-panel--compact">
