@@ -17,13 +17,15 @@ export function ActivityEditor({ label, lines, inspector }: ActivityEditorProps)
         ))}
       </div>
 
-      <pre className="code" aria-label={label}>
-        {lines.map((line, index) => (
-          <code key={index} className="code__line">
-            {line || "\u00A0"}
-          </code>
-        ))}
-      </pre>
+      <div className="editor__content">
+        <pre className="code" aria-label={label}>
+          {lines.map((line, index) => (
+            <code key={index} className="code__line">
+              {line || "\u00A0"}
+            </code>
+          ))}
+        </pre>
+      </div>
 
       {inspector ? <aside className="editor-hint">{inspector}</aside> : null}
     </div>
