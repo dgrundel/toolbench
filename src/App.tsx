@@ -1,10 +1,33 @@
 import { useEffect, useState } from "react";
 import { DemoActivity } from "./activities/DemoActivity";
+import { MarkdownViewerActivity } from "./activities/MarkdownViewerActivity";
 
 type StorageEstimate = {
   usage: number;
   quota: number;
 };
+
+type ActivityId = "markdown-viewer" | "demo";
+
+const activities: Array<{
+  id: ActivityId;
+  label: string;
+  icon: string;
+  element: JSX.Element;
+}> = [
+  {
+    id: "markdown-viewer",
+    label: "Markdown Viewer",
+    icon: "▣",
+    element: <MarkdownViewerActivity />
+  },
+  {
+    id: "demo",
+    label: "Demo",
+    icon: "▢",
+    element: <DemoActivity />
+  }
+];
 
 function useStorageQuota() {
   const [quota, setQuota] = useState<StorageEstimate | null>(null);
@@ -39,25 +62,35 @@ function useStorageQuota() {
 
 export default function App() {
   const quota = useStorageQuota();
+  const [activeActivityId, setActiveActivityId] = useState<ActivityId>("markdown-viewer");
   const percentUsed =
     quota && quota.quota > 0 ? Math.min((quota.usage / quota.quota) * 100, 100) : 0;
+
+  const activeActivity = activities.find((activity) => activity.id === activeActivityId) ?? activities[0];
 
   return (
     <div className="vscode-shell">
       <aside className="activity-bar" aria-label="Primary">
-        <button
-          className="activity-bar__button activity-bar__button--active"
-          type="button"
-          aria-label="Demo"
-        >
-          <span aria-hidden="true">▣</span>
-          <span className="activity-bar__tooltip" role="tooltip">
-            Demo
-          </span>
-        </button>
+        {activities.map((activity) => (
+          <button
+            key={activity.id}
+            className={`activity-bar__button ${
+              activity.id === activeActivity.id ? "activity-bar__button--active" : ""
+            }`}
+            type="button"
+            aria-label={activity.label}
+            aria-pressed={activity.id === activeActivity.id}
+            onClick={() => setActiveActivityId(activity.id)}
+          >
+            <span aria-hidden="true">{activity.icon}</span>
+            <span className="activity-bar__tooltip" role="tooltip">
+              {activity.label}
+            </span>
+          </button>
+        ))}
       </aside>
 
-      <DemoActivity />
+      {activeActivity.element}
 
       <footer className="status-bar" aria-label="Status bar">
         <div className="status-quota">

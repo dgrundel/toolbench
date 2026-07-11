@@ -305,9 +305,14 @@ button:focus-visible {
 .file-chip--json { background: #e6f3ef; color: #4a8e7d; }
 
 .editor-panel {
+  min-height: 0;
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr);
   min-width: 0;
+}
+
+.editor-panel--compact {
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .editor-panel__breadcrumbs {
@@ -322,9 +327,19 @@ button:focus-visible {
 
 .editor {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr) 320px;
+  grid-template-columns: 62px minmax(0, 1fr);
   background: linear-gradient(180deg, #fbfbfc 0%, #f4f6f9 100%);
+}
+
+.editor--with-inspector {
+  grid-template-columns: 62px minmax(0, 1fr) 320px;
+}
+
+.editor--compact {
+  grid-template-columns: 62px minmax(0, 1fr);
 }
 
 .gutter {
@@ -452,6 +467,10 @@ button:focus-visible {
     grid-template-columns: 58px minmax(0, 1fr);
   }
 
+  .editor--with-inspector {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
   .editor-hint {
     display: none;
   }
@@ -472,6 +491,10 @@ button:focus-visible {
   }
 
   .editor {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .editor--with-inspector {
     grid-template-columns: 52px minmax(0, 1fr);
   }
 
