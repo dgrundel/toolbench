@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 export type WorkspaceFileItem = {
   name: string;
   kind: "tsx" | "css" | "md" | "json";
@@ -13,12 +11,5 @@ export type WorkspaceTreeItem = {
 };
 
 export type WorkspaceLineItem = {
-  no: number;
   code: string;
-};
-
-export type WorkspaceEditorProps = {
-  label: string;
-  lines: WorkspaceLineItem[];
-  inspector?: ReactNode;
 };

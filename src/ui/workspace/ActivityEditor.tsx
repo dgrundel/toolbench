@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
-import type { WorkspaceLineItem } from "./types";
 
 type ActivityEditorProps = {
   label: string;
-  lines: WorkspaceLineItem[];
+  lines: string[];
   inspector?: ReactNode;
 };
 
@@ -11,17 +10,17 @@ export function ActivityEditor({ label, lines, inspector }: ActivityEditorProps)
   return (
     <div className={`editor ${inspector ? "editor--with-inspector" : "editor--compact"}`}>
       <div className="gutter" aria-hidden="true">
-        {lines.map((line) => (
-          <div key={line.no} className="gutter__line">
-            {line.no}
+        {lines.map((_, index) => (
+          <div key={index} className="gutter__line">
+            {index + 1}
           </div>
         ))}
       </div>
 
       <pre className="code" aria-label={label}>
-        {lines.map((line) => (
-          <code key={line.no} className="code__line">
-            {line.code || "\u00A0"}
+        {lines.map((line, index) => (
+          <code key={index} className="code__line">
+            {line || "\u00A0"}
           </code>
         ))}
       </pre>

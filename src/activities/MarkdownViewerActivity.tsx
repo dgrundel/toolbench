@@ -11,15 +11,15 @@ const files = [
 ];
 
 const editorLines = [
-  { no: 1, code: "# Markdown Viewer" },
-  { no: 2, code: "" },
-  { no: 3, code: "Use this activity to preview and inspect markdown content." },
-  { no: 4, code: "" },
-  { no: 5, code: "- Flat, VS Code-style shell" },
-  { no: 6, code: "- Persistent activity rail" },
-  { no: 7, code: "- Persistent status bar" },
-  { no: 8, code: "" },
-  { no: 9, code: "This view is the starting point for the first real activity." }
+  "# Markdown Viewer",
+  "",
+  "Use this activity to preview and inspect markdown content.",
+  "",
+  "- Flat, VS Code-style shell",
+  "- Persistent activity rail",
+  "- Persistent status bar",
+  "",
+  "This view is the starting point for the first real activity."
 ];
 
 const explorerItems = [

@@ -13,17 +13,17 @@ const files = [
 ];
 
 const editorLines = [
-  { no: 1, code: "import { Panel } from './ui/Panel';" },
-  { no: 2, code: "import { Sidebar } from './ui/Sidebar';" },
-  { no: 3, code: "" },
-  { no: 4, code: "export default function AppShell() {" },
-  { no: 5, code: "  return (" },
-  { no: 6, code: "    <Workspace" },
-  { no: 7, code: "      tone=\"light\"" },
-  { no: 8, code: "      density=\"compact\"" },
-  { no: 9, code: "    />" },
-  { no: 10, code: "  );" },
-  { no: 11, code: "}" }
+  "import { Panel } from './ui/Panel';",
+  "import { Sidebar } from './ui/Sidebar';",
+  "",
+  "export default function AppShell() {",
+  "  return (",
+  "    <Workspace",
+  "      tone=\"light\"",
+  "      density=\"compact\"",
+  "    />",
+  "  );",
+  "}"
 ];
 
 const explorerItems = [
