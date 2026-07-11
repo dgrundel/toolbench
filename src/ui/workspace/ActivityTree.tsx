@@ -1,4 +1,5 @@
 import type { WorkspaceTreeItem } from "./types";
+import { WorkspaceIcon } from "./WorkspaceIcon";
 
 type ActivityTreeProps = {
   items: WorkspaceTreeItem[];
@@ -39,7 +40,7 @@ export function ActivityTree({ items, header, count, onSelect, onDelete }: Activ
           >
             <span className="tree__item-main">
               <span className="tree__glyph" aria-hidden="true">
-                {item.type === "folder" ? "▸" : "•"}
+                <WorkspaceIcon name={item.type === "folder" ? "folder" : "file"} size={16} />
               </span>
               <span>{item.name}</span>
             </span>
@@ -54,7 +55,7 @@ export function ActivityTree({ items, header, count, onSelect, onDelete }: Activ
                   onDelete(item);
                 }}
               >
-                ×
+                <WorkspaceIcon name="delete" size={14} />
               </button>
             ) : null}
           </div>

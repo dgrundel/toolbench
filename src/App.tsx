@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DemoActivity } from "./activities/DemoActivity";
 import { MarkdownViewerActivity } from "./activities/MarkdownViewerActivity";
+import { WorkspaceIcon, type WorkspaceIconName } from "./ui/workspace/WorkspaceIcon";
 
 type StorageEstimate = {
   usage: number;
@@ -16,19 +17,19 @@ type ActivityId = "markdown-viewer" | "demo";
 const activities: Array<{
   id: ActivityId;
   label: string;
-  icon: string;
+  icon: WorkspaceIconName;
   render: (props: ActivityProps) => JSX.Element;
 }> = [
   {
     id: "markdown-viewer",
     label: "Markdown Viewer",
-    icon: "▣",
+    icon: "activity-markdown",
     render: (props) => <MarkdownViewerActivity onStorageChange={props.onStorageChange} />
   },
   {
     id: "demo",
     label: "Demo",
-    icon: "▢",
+    icon: "activity-demo",
     render: () => <DemoActivity />
   }
 ];
@@ -90,7 +91,7 @@ export default function App() {
             aria-pressed={activity.id === activeActivity.id}
             onClick={() => setActiveActivityId(activity.id)}
           >
-            <span aria-hidden="true">{activity.icon}</span>
+            <WorkspaceIcon name={activity.icon} />
             <span className="activity-bar__tooltip" role="tooltip">
               {activity.label}
             </span>

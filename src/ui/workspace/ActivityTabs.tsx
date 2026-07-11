@@ -1,4 +1,5 @@
 import type { WorkspaceFileItem } from "./types";
+import { WorkspaceIcon } from "./WorkspaceIcon";
 
 type ActivityTabsProps = {
   files: WorkspaceFileItem[];
@@ -30,14 +31,31 @@ export function ActivityTabs({ files, onSelect, onClose }: ActivityTabsProps) {
                 }
               : undefined
           }
-        >
-          <span className={`file-chip file-chip--${file.kind}`}>{file.kind.toUpperCase()}</span>
+          >
+          <span className={`file-chip file-chip--${file.kind}`} aria-hidden="true">
+            <WorkspaceIcon name={fileKindIconName(file.kind)} size={15} />
+          </span>
           <span>{file.name}</span>
           <span className="tab__close" aria-hidden="true" data-tab-close="true">
-            ×
+            <WorkspaceIcon name="close" size={14} />
           </span>
         </button>
       ))}
     </div>
   );
+}
+
+function fileKindIconName(kind: WorkspaceFileItem["kind"]) {
+  switch (kind) {
+    case "tsx":
+      return "file-tsx";
+    case "css":
+      return "file-css";
+    case "md":
+      return "file-md";
+    case "json":
+      return "file-json";
+    default:
+      return "file";
+  }
 }
