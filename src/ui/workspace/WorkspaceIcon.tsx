@@ -5,6 +5,7 @@ import {
   IconFileTypeTsx,
   IconFileText,
   IconFolder,
+  IconLayoutGrid,
   IconMarkdown,
   IconSquare2,
   IconTrash,
@@ -14,6 +15,7 @@ import {
 type WorkspaceIconName =
   | "activity-markdown"
   | "activity-demo"
+  | "home"
   | "more-actions"
   | "file-tsx"
   | "file-css"
@@ -33,6 +35,7 @@ type WorkspaceIconProps = {
 const iconMap = {
   "activity-markdown": IconMarkdown,
   "activity-demo": IconSquare2,
+  home: IconLayoutGrid,
   "more-actions": IconDotsVertical,
   "file-tsx": IconFileTypeTsx,
   "file-css": IconFileTypeCss,

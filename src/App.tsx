@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DemoActivity } from "./activities/DemoActivity";
 import { MarkdownViewerActivity } from "./activities/MarkdownViewerActivity";
 import { WorkspaceIcon, type WorkspaceIconName } from "./ui/workspace/WorkspaceIcon";
+import { WorkspaceHomeLauncher, type WorkspaceHomeLaunchItem } from "./ui/workspace/WorkspaceHomeLauncher";
 
 type StorageEstimate = {
   usage: number;
@@ -33,6 +34,12 @@ const activities: Array<{
     render: () => <DemoActivity />
   }
 ];
+
+const homeLaunchItems: WorkspaceHomeLaunchItem[] = activities.map(({ id, label, icon }) => ({
+  id,
+  label,
+  icon
+}));
 
 function useStorageQuota() {
   const [quota, setQuota] = useState<StorageEstimate | null>(null);
@@ -71,11 +78,11 @@ function useStorageQuota() {
 
 export default function App() {
   const { quota, refresh } = useStorageQuota();
-  const [activeActivityId, setActiveActivityId] = useState<ActivityId>("markdown-viewer");
+  const [activeView, setActiveView] = useState<"home" | ActivityId>("home");
   const percentUsed =
     quota && quota.quota > 0 ? Math.min((quota.usage / quota.quota) * 100, 100) : 0;
 
-  const activeActivity = activities.find((activity) => activity.id === activeActivityId) ?? activities[0];
+  const activeActivity = activities.find((activity) => activity.id === activeView) ?? null;
 
   return (
     <div className="vscode-shell">
@@ -83,13 +90,11 @@ export default function App() {
         {activities.map((activity) => (
           <button
             key={activity.id}
-            className={`activity-bar__button ${
-              activity.id === activeActivity.id ? "activity-bar__button--active" : ""
-            }`}
+            className={`activity-bar__button ${activity.id === activeActivity?.id ? "activity-bar__button--active" : ""}`}
             type="button"
             aria-label={activity.label}
-            aria-pressed={activity.id === activeActivity.id}
-            onClick={() => setActiveActivityId(activity.id)}
+            aria-pressed={activity.id === activeActivity?.id}
+            onClick={() => setActiveView(activity.id)}
           >
             <WorkspaceIcon name={activity.icon} />
             <span className="activity-bar__tooltip" role="tooltip">
@@ -99,7 +104,11 @@ export default function App() {
         ))}
       </aside>
 
-      {activeActivity.render({ onStorageChange: refresh })}
+      {activeView === "home" ? (
+        <WorkspaceHomeLauncher items={homeLaunchItems} onSelect={(id) => setActiveView(id as ActivityId)} />
+      ) : (
+        activeActivity?.render({ onStorageChange: refresh }) ?? null
+      )}
 
       <footer className="status-bar" aria-label="Status bar">
         <div className="status-quota">

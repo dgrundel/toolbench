@@ -286,6 +286,112 @@ button:focus-visible {
   background: #f5f6f8;
 }
 
+.workspace-home {
+  grid-column: 2 / -1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 34px 32px 36px;
+  background: #f5f6f8;
+}
+
+.workspace-home__inner {
+  width: min(1120px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.workspace-home__hero {
+  width: min(100%, calc(180px * 2 + 10px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.workspace-home__hero-icon {
+  color: var(--blue);
+}
+
+.workspace-home__title {
+  margin: 0;
+  color: #29313b;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.workspace-home__subtitle {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.workspace-home__grid {
+  width: min(100%, calc(180px * 2 + 10px));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 180px);
+  justify-content: center;
+  gap: 10px;
+}
+
+.workspace-home__tile {
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 8px;
+  color: #2f3441;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.workspace-home__tile-icon-slot {
+  width: 100%;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.workspace-home__tile:hover,
+.workspace-home__tile:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--blue-line);
+  box-shadow: 0 10px 22px rgba(27, 33, 41, 0.1);
+}
+
+.workspace-home__tile-icon {
+  color: var(--blue);
+  display: block;
+}
+
+.workspace-home__tile-label {
+  width: 100%;
+  min-height: 2.2em;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
 .markdown-viewer__dropzone--sidebar {
   height: 100%;
   min-height: 0;
