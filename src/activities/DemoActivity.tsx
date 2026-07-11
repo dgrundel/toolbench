@@ -1,4 +1,9 @@
-import { ActivityWorkspace } from "../ui/ActivityWorkspace";
+import { ActivityBreadcrumbs } from "../ui/workspace/ActivityBreadcrumbs";
+import { ActivityEditor } from "../ui/workspace/ActivityEditor";
+import { ActivityInspectorCard } from "../ui/workspace/ActivityInspectorCard";
+import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
+import { ActivityTabs } from "../ui/workspace/ActivityTabs";
+import { ActivityTree } from "../ui/workspace/ActivityTree";
 
 const files = [
   { name: "app.tsx", kind: "tsx", active: true },
@@ -32,25 +37,29 @@ const explorerItems = [
 
 export function DemoActivity() {
   return (
-    <ActivityWorkspace
-      sidebarTitle="DEMO"
-      treeHeader="PROJECT"
-      treeCount={4}
-      treeItems={explorerItems}
-      files={files}
-      editorLabel="Example editor"
-      editorLines={editorLines}
-      breadcrumbs={["src", "/", "app.tsx", "/", "Workspace"]}
-      inspector={
-        <div className="editor-hint__card">
-          <p className="editor-hint__eyebrow">Light theme</p>
-          <h1>Neutral panels, blue emphasis, square geometry.</h1>
-          <p>
-            This rebuild leans on the VS Code desktop language: slim borders, subdued chrome,
-            tabbed editing, and a soft accent line instead of heavy shadows.
-          </p>
-        </div>
-      }
-    />
+    <>
+      <ActivitySidebar title="DEMO">
+        <ActivityTree items={explorerItems} header="PROJECT" count={4} />
+      </ActivitySidebar>
+
+      <main className="editor-shell">
+        <ActivityTabs files={files} />
+
+        <section className="editor-panel">
+          <ActivityBreadcrumbs crumbs={["src", "/", "app.tsx", "/", "Workspace"]} />
+          <ActivityEditor
+            label="Example editor"
+            lines={editorLines}
+            inspector={
+              <ActivityInspectorCard
+                eyebrow="Light theme"
+                title="Neutral panels, blue emphasis, square geometry."
+                body="This rebuild leans on the VS Code desktop language: slim borders, subdued chrome, tabbed editing, and a soft accent line instead of heavy shadows."
+              />
+            }
+          />
+        </section>
+      </main>
+    </>
   );
 }

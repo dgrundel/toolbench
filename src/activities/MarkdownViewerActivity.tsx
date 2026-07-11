@@ -1,4 +1,7 @@
-import { ActivityWorkspace } from "../ui/ActivityWorkspace";
+import { ActivityEditor } from "../ui/workspace/ActivityEditor";
+import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
+import { ActivityTabs } from "../ui/workspace/ActivityTabs";
+import { ActivityTree } from "../ui/workspace/ActivityTree";
 
 const files = [
   { name: "notes.md", kind: "md", active: true },
@@ -30,12 +33,18 @@ const explorerItems = [
 
 export function MarkdownViewerActivity() {
   return (
-    <ActivityWorkspace
-      sidebarTitle="MARKDOWN VIEWER"
-      treeItems={explorerItems}
-      files={files}
-      editorLabel="Markdown viewer"
-      editorLines={editorLines}
-    />
+    <>
+      <ActivitySidebar title="MARKDOWN VIEWER">
+        <ActivityTree items={explorerItems} />
+      </ActivitySidebar>
+
+      <main className="editor-shell">
+        <ActivityTabs files={files} />
+
+        <section className="editor-panel editor-panel--compact">
+          <ActivityEditor label="Markdown viewer" lines={editorLines} />
+        </section>
+      </main>
+    </>
   );
 }
