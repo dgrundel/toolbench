@@ -363,8 +363,8 @@ button:focus-visible {
 .editor__content {
   min-width: 0;
   min-height: 0;
-  width: max-content;
-  min-width: max-content;
+  width: 100%;
+  min-width: 100%;
   background: #ffffff;
   border-right: 1px solid var(--line-soft);
 }
@@ -378,6 +378,7 @@ button:focus-visible {
   line-height: 2;
   color: #2f3441;
   width: max-content;
+  min-width: 100%;
   background: transparent;
 }
 

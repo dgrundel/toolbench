@@ -65,11 +65,13 @@ const initialDocuments: MarkdownDocument[] = [
 
 export function MarkdownViewerActivity() {
   const [documents, setDocuments] = useState(initialDocuments);
-  const [activeDocumentId, setActiveDocumentId] = useState(initialDocuments[0].id);
+  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(initialDocuments[0].id);
+  const [openDocumentIds, setOpenDocumentIds] = useState(initialDocuments.map((document) => document.id));
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
 
-  const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
-  const files = documents.map((document) => ({
+  const openDocuments = documents.filter((document) => openDocumentIds.includes(document.id));
+  const activeDocument = openDocuments.find((document) => document.id === activeDocumentId) ?? openDocuments[0] ?? null;
+  const files = openDocuments.map((document) => ({
     name: document.name,
     kind: "md" as const,
     active: document.id === activeDocumentId
@@ -77,16 +79,40 @@ export function MarkdownViewerActivity() {
   const explorerItems = documents.map((document) => ({
     name: document.name,
     type: "file" as const,
-    active: document.id === activeDocumentId
+    active: document.id === activeDocument?.id
   }));
-  const editorLines = activeDocument.content.split(/\r?\n/);
+  const editorLines = activeDocument?.content.split(/\r?\n/) ?? [];
 
   function selectDocument(name: string) {
     const selected = documents.find((document) => document.name === name);
 
     if (selected) {
       setActiveDocumentId(selected.id);
+      setOpenDocumentIds((currentOpenDocumentIds) =>
+        currentOpenDocumentIds.includes(selected.id)
+          ? currentOpenDocumentIds
+          : [...currentOpenDocumentIds, selected.id]
+      );
     }
+  }
+
+  function closeDocument(name: string) {
+    const selected = documents.find((document) => document.name === name);
+
+    if (!selected) {
+      return;
+    }
+
+    setOpenDocumentIds((currentOpenDocumentIds) => {
+      const nextOpenDocumentIds = currentOpenDocumentIds.filter((documentId) => documentId !== selected.id);
+
+      if (activeDocumentId === selected.id) {
+        const nextActiveDocumentId = nextOpenDocumentIds[0] ?? null;
+        setActiveDocumentId(nextActiveDocumentId);
+      }
+
+      return nextOpenDocumentIds;
+    });
   }
 
   async function ingestFiles(fileList: FileList | File[]) {
@@ -110,6 +136,10 @@ export function MarkdownViewerActivity() {
     }
 
     setDocuments((currentDocuments) => [...currentDocuments, ...importedDocuments]);
+    setOpenDocumentIds((currentOpenDocumentIds) => [
+      ...currentOpenDocumentIds,
+      ...importedDocuments.map((document) => document.id)
+    ]);
     setActiveDocumentId(importedDocuments[importedDocuments.length - 1].id);
   }
 
@@ -167,10 +197,22 @@ export function MarkdownViewerActivity() {
         onDragOver={handleDragOver}
         onDrop={handleDrop()}
       >
-        <ActivityTabs files={files} onSelect={(file) => selectDocument(file.name)} />
+        <ActivityTabs
+          files={files}
+          onSelect={(file) => selectDocument(file.name)}
+          onClose={(file) => closeDocument(file.name)}
+        />
 
         <section className="editor-panel editor-panel--compact">
-          <ActivityEditor label={activeDocument.name} lines={activeDocument.content.split(/\r?\n/)} />
+          {activeDocument ? (
+            <ActivityEditor label={activeDocument.name} lines={editorLines} />
+          ) : (
+            <div className="editor editor--compact" aria-label="No file open">
+              <div className="editor__content">
+                <p>Click a file on the left to open it or drag and drop a file here.</p>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </>
