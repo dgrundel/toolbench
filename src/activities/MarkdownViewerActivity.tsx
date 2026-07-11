@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
-import { MarkdownPreview } from "../ui/workspace/MarkdownPreview";
+import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
+import { MarkdownPreview, markdownToClipboardHtml } from "../ui/workspace/MarkdownPreview";
+import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 import {
   deleteMarkdownDocument,
   listMarkdownDocuments,
@@ -21,9 +23,11 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     activeDocumentIdRef.current = activeDocumentId;
@@ -193,6 +197,70 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     }
   }
 
+  async function copyMarkdownToClipboard() {
+    if (!activeDocument) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(activeDocument.content);
+      setCopyStatus("markdown");
+
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setCopyStatus("idle");
+        copyResetTimerRef.current = null;
+      }, 1200);
+    } catch (error) {
+      console.error(`Failed to copy markdown for ${activeDocument.name}.`, error);
+    }
+  }
+
+  async function copyRenderedMarkdownToClipboard() {
+    if (!activeDocument) {
+      return;
+    }
+
+    try {
+      const renderedHtml = markdownToClipboardHtml(activeDocument.content);
+
+      if ("ClipboardItem" in window && navigator.clipboard.write) {
+        const clipboardItem = new ClipboardItem({
+          "text/html": new Blob([renderedHtml], { type: "text/html" }),
+          "text/plain": new Blob([activeDocument.content], { type: "text/plain" })
+        });
+
+        await navigator.clipboard.write([clipboardItem]);
+      } else {
+        await navigator.clipboard.writeText(activeDocument.content);
+      }
+
+      setCopyStatus("rendered");
+
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setCopyStatus("idle");
+        copyResetTimerRef.current = null;
+      }, 1200);
+    } catch (error) {
+      console.error(`Failed to copy rendered markdown for ${activeDocument.name}.`, error);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+    };
+  }, []);
+
   function handleDragEnter(target: "sidebar" | "editor") {
     return (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
@@ -260,15 +328,38 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         />
 
         <section className="editor-panel editor-panel--compact">
-          {activeDocument ? (
-            <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
-          ) : (
-            <div className="markdown-viewer-empty-state" aria-label="No file open">
-              <p className="markdown-viewer-empty-state__message">
-                Open a file from the left or drag and drop one here to get started.
-              </p>
-            </div>
-          )}
+          <div className="markdown-viewer__panel-body">
+            <ActivityToolbar label="Markdown tools">
+              <button
+                type="button"
+                className="editor-panel__toolbar-button"
+                onClick={copyMarkdownToClipboard}
+                disabled={!activeDocument}
+              >
+                <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
+                {copyStatus === "markdown" ? "Copied Markdown" : "Copy Markdown"}
+              </button>
+              <button
+                type="button"
+                className="editor-panel__toolbar-button"
+                onClick={copyRenderedMarkdownToClipboard}
+                disabled={!activeDocument}
+              >
+                <WorkspaceIcon name="file-html" size={14} className="editor-panel__toolbar-button-icon" />
+                {copyStatus === "rendered" ? "Copied Rendered" : "Copy Rendered"}
+              </button>
+            </ActivityToolbar>
+
+            {activeDocument ? (
+              <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
+            ) : (
+              <div className="markdown-viewer-empty-state" aria-label="No file open">
+                <p className="markdown-viewer-empty-state__message">
+                  Open a file from the left or drag and drop one here to get started.
+                </p>
+              </div>
+            )}
+          </div>
         </section>
       </main>
     </>

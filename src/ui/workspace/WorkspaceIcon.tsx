@@ -1,7 +1,9 @@
 import {
   IconDotsVertical,
+  IconCopy,
   IconFileCode,
   IconFileTypeCss,
+  IconFileTypeHtml,
   IconFileTypeTsx,
   IconFileText,
   IconFolder,
@@ -19,11 +21,13 @@ type WorkspaceIconName =
   | "more-actions"
   | "file-tsx"
   | "file-css"
+  | "file-html"
   | "file-md"
   | "file-json"
   | "file"
   | "folder"
   | "delete"
+  | "copy"
   | "close";
 
 type WorkspaceIconProps = {
@@ -39,11 +43,13 @@ const iconMap = {
   "more-actions": IconDotsVertical,
   "file-tsx": IconFileTypeTsx,
   "file-css": IconFileTypeCss,
+  "file-html": IconFileTypeHtml,
   "file-md": IconMarkdown,
   "file-json": IconFileCode,
   file: IconFileText,
   folder: IconFolder,
   delete: IconTrash,
+  copy: IconCopy,
   close: IconX
 } as const;
 
