@@ -207,10 +207,8 @@ export function MarkdownViewerActivity() {
           {activeDocument ? (
             <ActivityEditor label={activeDocument.name} lines={editorLines} />
           ) : (
-            <div className="editor editor--compact" aria-label="No file open">
-              <div className="editor__content">
-                <p>Click a file on the left to open it or drag and drop a file here.</p>
-              </div>
+            <div className="editor-empty-state" aria-label="No file open">
+              <p className="editor-empty-state__message">Open a file from the left or drag and drop one here to get started.</p>
             </div>
           )}
         </section>
