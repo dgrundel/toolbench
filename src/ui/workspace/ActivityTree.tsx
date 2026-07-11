@@ -4,9 +4,10 @@ type ActivityTreeProps = {
   items: WorkspaceTreeItem[];
   header?: string;
   count?: string | number;
+  onSelect?: (item: WorkspaceTreeItem) => void;
 };
 
-export function ActivityTree({ items, header, count }: ActivityTreeProps) {
+export function ActivityTree({ items, header, count, onSelect }: ActivityTreeProps) {
   return (
     <section className="sidebar-section sidebar-section--tree">
       {header ? (
@@ -21,6 +22,19 @@ export function ActivityTree({ items, header, count }: ActivityTreeProps) {
           <div
             key={item.name}
             className={`tree__item tree__item--${item.type} ${item.active ? "tree__item--active" : ""}`}
+            role={onSelect ? "button" : undefined}
+            tabIndex={onSelect ? 0 : undefined}
+            onClick={onSelect ? () => onSelect(item) : undefined}
+            onKeyDown={
+              onSelect
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelect(item);
+                    }
+                  }
+                : undefined
+            }
           >
             <span className="tree__glyph" aria-hidden="true">
               {item.type === "folder" ? "▸" : "•"}

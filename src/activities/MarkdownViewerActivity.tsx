@@ -1,48 +1,104 @@
+import { useState } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
 
-const files = [
-  { name: "notes.md", kind: "md", active: true },
-  { name: "outline.md", kind: "md" },
-  { name: "README.md", kind: "md" },
-  { name: "draft.md", kind: "md" }
-];
+type MarkdownDocument = {
+  id: string;
+  name: string;
+  content: string;
+};
 
-const editorLines = [
-  "# Markdown Viewer",
-  "",
-  "Use this activity to preview and inspect markdown content.",
-  "",
-  "- Flat, VS Code-style shell",
-  "- Persistent activity rail",
-  "- Persistent status bar",
-  "",
-  "This view is the starting point for the first real activity."
-];
-
-const explorerItems = [
-  { name: "docs", type: "folder", open: true },
-  { name: "notes", type: "folder" },
-  { name: "markdown", type: "folder" },
-  { name: "notes.md", type: "file", active: true },
-  { name: "outline.md", type: "file" },
-  { name: "draft.md", type: "file" }
+const initialDocuments: MarkdownDocument[] = [
+  {
+    id: "notes",
+    name: "notes.md",
+    content: [
+      "# Markdown Viewer",
+      "",
+      "Use this activity to preview and inspect markdown content.",
+      "",
+      "- Flat, VS Code-style shell",
+      "- Persistent activity rail",
+      "- Persistent status bar",
+      "",
+      "This view is the starting point for the first real activity."
+    ].join("\n")
+  },
+  {
+    id: "outline",
+    name: "outline.md",
+    content: [
+      "# Outline",
+      "",
+      "1. Import a markdown file.",
+      "2. Click it in the file list or tabs.",
+      "3. Read the content in the editor."
+    ].join("\n")
+  },
+  {
+    id: "readme",
+    name: "README.md",
+    content: [
+      "# README",
+      "",
+      "This is a markdown viewer prototype.",
+      "",
+      "- Switch between files from the left panel",
+      "- Switch between files from the tabs",
+      "- Keep the current document in view"
+    ].join("\n")
+  },
+  {
+    id: "draft",
+    name: "draft.md",
+    content: [
+      "# Draft",
+      "",
+      "The editor content changes when you click a different file.",
+      "",
+      "That state is shared by the file list, the tab strip, and the editor."
+    ].join("\n")
+  }
 ];
 
 export function MarkdownViewerActivity() {
+  const [documents, setDocuments] = useState(initialDocuments);
+  const [activeDocumentId, setActiveDocumentId] = useState(initialDocuments[0].id);
+
+  const activeDocument = documents.find((document) => document.id === activeDocumentId) ?? documents[0];
+  const files = documents.map((document) => ({
+    name: document.name,
+    kind: "md" as const,
+    active: document.id === activeDocumentId
+  }));
+  const explorerItems = documents.map((document) => ({
+    name: document.name,
+    type: "file" as const,
+    active: document.id === activeDocumentId
+  }));
+  const editorLines = activeDocument.content.split(/\r?\n/);
+
+  function selectDocument(name: string) {
+    const selected = documents.find((document) => document.name === name);
+
+    if (selected) {
+      setActiveDocumentId(selected.id);
+    }
+  }
+
   return (
     <>
       <ActivitySidebar title="MARKDOWN VIEWER">
-        <ActivityTree items={explorerItems} />
+        <ActivityTree items={explorerItems} onSelect={(item) => selectDocument(item.name)} />
       </ActivitySidebar>
 
       <main className="editor-shell">
-        <ActivityTabs files={files} />
+        <ActivityTabs files={files} onSelect={(file) => selectDocument(file.name)} />
 
         <section className="editor-panel editor-panel--compact">
-          <ActivityEditor label="Markdown viewer" lines={editorLines} />
+          <ActivityEditor label={activeDocument.name} lines={editorLines} />
         </section>
       </main>
     </>
