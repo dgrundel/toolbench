@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
+import { MarkdownPreview } from "../ui/workspace/MarkdownPreview";
 import {
   deleteMarkdownDocument,
   listMarkdownDocuments,
@@ -65,8 +65,6 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     type: "file" as const,
     active: document.id === activeDocument?.id
   }));
-  const editorLines = activeDocument?.content.split(/\r?\n/) ?? [];
-
   async function refreshStoredDocuments() {
     const records = await listMarkdownDocuments();
     setStoredDocuments(records);
@@ -263,10 +261,12 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
         <section className="editor-panel editor-panel--compact">
           {activeDocument ? (
-            <ActivityEditor label={activeDocument.name} lines={editorLines} />
+            <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
           ) : (
-            <div className="editor-empty-state" aria-label="No file open">
-              <p className="editor-empty-state__message">Open a file from the left or drag and drop one here to get started.</p>
+            <div className="markdown-viewer-empty-state" aria-label="No file open">
+              <p className="markdown-viewer-empty-state__message">
+                Open a file from the left or drag and drop one here to get started.
+              </p>
             </div>
           )}
         </section>
