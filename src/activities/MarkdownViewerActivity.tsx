@@ -10,63 +10,12 @@ type MarkdownDocument = {
   content: string;
 };
 
-const initialDocuments: MarkdownDocument[] = [
-  {
-    id: "notes",
-    name: "notes.md",
-    content: [
-      "# Markdown Viewer",
-      "",
-      "Use this activity to preview and inspect markdown content.",
-      "",
-      "- Flat, VS Code-style shell",
-      "- Persistent activity rail",
-      "- Persistent status bar",
-      "",
-      "This view is the starting point for the first real activity."
-    ].join("\n")
-  },
-  {
-    id: "outline",
-    name: "outline.md",
-    content: [
-      "# Outline",
-      "",
-      "1. Import a markdown file.",
-      "2. Click it in the file list or tabs.",
-      "3. Read the content in the editor."
-    ].join("\n")
-  },
-  {
-    id: "readme",
-    name: "README.md",
-    content: [
-      "# README",
-      "",
-      "This is a markdown viewer prototype.",
-      "",
-      "- Switch between files from the left panel",
-      "- Switch between files from the tabs",
-      "- Keep the current document in view"
-    ].join("\n")
-  },
-  {
-    id: "draft",
-    name: "draft.md",
-    content: [
-      "# Draft",
-      "",
-      "The editor content changes when you click a different file.",
-      "",
-      "That state is shared by the file list, the tab strip, and the editor."
-    ].join("\n")
-  }
-];
+const initialDocuments: MarkdownDocument[] = [];
 
 export function MarkdownViewerActivity() {
   const [documents, setDocuments] = useState(initialDocuments);
-  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(initialDocuments[0].id);
-  const [openDocumentIds, setOpenDocumentIds] = useState(initialDocuments.map((document) => document.id));
+  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+  const [openDocumentIds, setOpenDocumentIds] = useState<string[]>([]);
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
 
   const openDocuments = openDocumentIds
