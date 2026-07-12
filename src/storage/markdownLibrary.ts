@@ -5,12 +5,26 @@ export type MarkdownLibrarySummary = {
   updatedAt: number;
 };
 
+export type MarkdownLibraryHighlightStatus = "resolved" | "unresolved";
+
+export type MarkdownLibraryHighlight = {
+  id: string;
+  startOffset: number;
+  endOffset: number;
+  excerpt: string;
+  createdAt: number;
+  updatedAt: number;
+  status: MarkdownLibraryHighlightStatus;
+};
+
 export type MarkdownLibraryDocument = MarkdownLibrarySummary & {
   content: string;
+  highlights: MarkdownLibraryHighlight[];
 };
 
 type MarkdownLibraryRecord = MarkdownLibrarySummary & {
   compressedContent: ArrayBuffer;
+  highlights?: MarkdownLibraryHighlight[];
 };
 
 const DATABASE_NAME = "toolbench-markdown-library";
@@ -67,7 +81,8 @@ export async function loadMarkdownDocument(id: string): Promise<MarkdownLibraryD
           name: record.name,
           createdAt: record.createdAt,
           updatedAt: record.updatedAt,
-          content
+          content,
+          highlights: normalizeHighlights(record.highlights)
         });
       } catch (error) {
         reject(error);
@@ -81,6 +96,7 @@ export async function saveMarkdownDocument(document: {
   name: string;
   content: string;
   createdAt?: number;
+  highlights?: MarkdownLibraryHighlight[];
 }): Promise<MarkdownLibrarySummary> {
   const database = await getDatabase();
   const now = Date.now();
@@ -90,7 +106,8 @@ export async function saveMarkdownDocument(document: {
     name: document.name,
     createdAt: document.createdAt ?? now,
     updatedAt: now,
-    compressedContent
+    compressedContent,
+    highlights: document.highlights ?? []
   };
 
   return new Promise((resolve, reject) => {
@@ -102,6 +119,43 @@ export async function saveMarkdownDocument(document: {
     transaction.oncomplete = () => resolve(toSummary(record));
     transaction.onerror = () => reject(transaction.error ?? new Error("Unable to save markdown document."));
     transaction.onabort = () => reject(transaction.error ?? new Error("Unable to save markdown document."));
+  });
+}
+
+export async function updateMarkdownDocumentHighlights(
+  id: string,
+  highlights: MarkdownLibraryHighlight[]
+): Promise<MarkdownLibrarySummary | null> {
+  const database = await getDatabase();
+  const now = Date.now();
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onerror = () => reject(request.error ?? new Error("Unable to update markdown document highlights."));
+    request.onsuccess = () => {
+      const record = request.result as MarkdownLibraryRecord | undefined;
+
+      if (!record) {
+        resolve(null);
+        return;
+      }
+
+      const nextRecord: MarkdownLibraryRecord = {
+        ...record,
+        updatedAt: now,
+        highlights
+      };
+
+      const putRequest = store.put(nextRecord);
+
+      putRequest.onerror = () => reject(putRequest.error ?? new Error("Unable to update markdown document highlights."));
+      transaction.oncomplete = () => resolve(toSummary(nextRecord));
+      transaction.onerror = () => reject(transaction.error ?? new Error("Unable to update markdown document highlights."));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Unable to update markdown document highlights."));
+    };
   });
 }
 
@@ -127,6 +181,32 @@ function toSummary(record: MarkdownLibraryRecord): MarkdownLibrarySummary {
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
+}
+
+function normalizeHighlights(highlights: MarkdownLibraryRecord["highlights"]): MarkdownLibraryHighlight[] {
+  if (!Array.isArray(highlights)) {
+    return [];
+  }
+
+  return highlights.filter(isMarkdownLibraryHighlight).map((highlight) => ({ ...highlight }));
+}
+
+function isMarkdownLibraryHighlight(value: unknown): value is MarkdownLibraryHighlight {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const highlight = value as Partial<MarkdownLibraryHighlight>;
+
+  return (
+    typeof highlight.id === "string" &&
+    typeof highlight.startOffset === "number" &&
+    typeof highlight.endOffset === "number" &&
+    typeof highlight.excerpt === "string" &&
+    typeof highlight.createdAt === "number" &&
+    typeof highlight.updatedAt === "number" &&
+    (highlight.status === "resolved" || highlight.status === "unresolved")
+  );
 }
 
 async function compressText(content: string): Promise<ArrayBuffer> {

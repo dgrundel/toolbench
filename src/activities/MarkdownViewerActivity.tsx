@@ -14,7 +14,9 @@ import {
   deleteMarkdownDocument,
   listMarkdownDocuments,
   loadMarkdownDocument,
+  updateMarkdownDocumentHighlights,
   saveMarkdownDocument,
+  type MarkdownLibraryHighlight,
   type MarkdownLibraryDocument,
   type MarkdownLibrarySummary
 } from "../storage/markdownLibrary";
@@ -23,8 +25,11 @@ type MarkdownViewerActivityProps = {
   onStorageChange?: () => void;
 };
 
-type PageHighlight = MarkdownPreviewSelection & {
-  id: string;
+type PageHighlight = MarkdownLibraryHighlight;
+
+type HighlightDeleteTarget = {
+  documentId: string;
+  highlight: PageHighlight;
 };
 
 export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
@@ -34,8 +39,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const [highlightMode, setHighlightMode] = useState(false);
-  const [highlightsByDocumentId, setHighlightsByDocumentId] = useState<Record<string, PageHighlight[]>>({});
-  const [highlightDeleteTarget, setHighlightDeleteTarget] = useState<PageHighlight | null>(null);
+  const [highlightDeleteTarget, setHighlightDeleteTarget] = useState<HighlightDeleteTarget | null>(null);
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
@@ -82,7 +86,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     type: "file" as const,
     active: document.id === activeDocument?.id
   }));
-  const activeHighlights = activeDocumentId ? highlightsByDocumentId[activeDocumentId] ?? [] : [];
+  const activeHighlights = activeDocument?.highlights ?? [];
   async function refreshStoredDocuments() {
     const records = await listMarkdownDocuments();
     setStoredDocuments(records);
@@ -197,7 +201,8 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         });
         importedDocuments.push({
           ...savedDocument,
-          content
+          content,
+          highlights: []
         });
       }
 
@@ -268,45 +273,71 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   }
 
   function handleCreateHighlight(selection: MarkdownPreviewSelection) {
-    if (!activeDocumentId) {
+    if (!activeDocument) {
       return;
     }
 
+    const now = Date.now();
     const newHighlight: PageHighlight = {
       id: crypto.randomUUID(),
       startOffset: selection.startOffset,
       endOffset: selection.endOffset,
-      excerpt: selection.excerpt
+      excerpt: selection.excerpt,
+      createdAt: now,
+      updatedAt: now,
+      status: "resolved"
     };
 
-    setHighlightsByDocumentId((currentHighlights) => {
-      const current = currentHighlights[activeDocumentId] ?? [];
+    const nextHighlights = [...activeDocument.highlights, newHighlight];
 
-      return {
-        ...currentHighlights,
-        [activeDocumentId]: [...current, newHighlight]
-      };
-    });
+    setOpenDocuments((currentOpenDocuments) =>
+      currentOpenDocuments.map((document) =>
+        document.id === activeDocument.id ? { ...document, highlights: nextHighlights } : document
+      )
+    );
+
+    void updateMarkdownDocumentHighlights(activeDocument.id, nextHighlights)
+      .catch((error) => {
+        console.error(`Failed to save highlight for ${activeDocument.name}.`, error);
+      })
+      .finally(() => {
+        onStorageChange?.();
+      });
   }
 
-  function handleDeleteHighlight(highlightId: string) {
-    if (!activeDocumentId) {
+  function handleDeleteHighlight(documentId: string, highlightId: string) {
+    const document = openDocuments.find((item) => item.id === documentId);
+
+    if (!document) {
       return;
     }
 
-    setHighlightsByDocumentId((currentHighlights) => {
-      const current = currentHighlights[activeDocumentId] ?? [];
-      const nextHighlights = current.filter((highlight) => highlight.id !== highlightId);
+    const nextHighlights = document.highlights.filter((highlight) => highlight.id !== highlightId);
 
-      return {
-        ...currentHighlights,
-        [activeDocumentId]: nextHighlights
-      };
-    });
+    setOpenDocuments((currentOpenDocuments) =>
+      currentOpenDocuments.map((document) =>
+        document.id === documentId ? { ...document, highlights: nextHighlights } : document
+      )
+    );
+
+    void updateMarkdownDocumentHighlights(documentId, nextHighlights)
+      .catch((error) => {
+        console.error(`Failed to update highlight for ${document.name}.`, error);
+      })
+      .finally(() => {
+        onStorageChange?.();
+      });
   }
 
   function requestDeleteHighlight(highlight: PageHighlight) {
-    setHighlightDeleteTarget(highlight);
+    if (!activeDocument) {
+      return;
+    }
+
+    setHighlightDeleteTarget({
+      documentId: activeDocument.id,
+      highlight
+    });
   }
 
   function confirmDeleteHighlight() {
@@ -314,7 +345,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
       return;
     }
 
-    handleDeleteHighlight(highlightDeleteTarget.id);
+    handleDeleteHighlight(highlightDeleteTarget.documentId, highlightDeleteTarget.highlight.id);
     setHighlightDeleteTarget(null);
   }
 
