@@ -3,7 +3,11 @@ import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
-import { MarkdownPreview, markdownToClipboardHtml } from "../ui/workspace/MarkdownPreview";
+import {
+  MarkdownPreview,
+  markdownToClipboardHtml,
+  type MarkdownPreviewSelection
+} from "../ui/workspace/MarkdownPreview";
 import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 import {
   deleteMarkdownDocument,
@@ -18,6 +22,10 @@ type MarkdownViewerActivityProps = {
   onStorageChange?: () => void;
 };
 
+type PageHighlight = MarkdownPreviewSelection & {
+  id: string;
+};
+
 export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
   const [storedDocuments, setStoredDocuments] = useState<MarkdownLibrarySummary[]>([]);
   const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
@@ -25,6 +33,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const [highlightMode, setHighlightMode] = useState(false);
+  const [highlightsByDocumentId, setHighlightsByDocumentId] = useState<Record<string, PageHighlight[]>>({});
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
@@ -70,6 +79,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     type: "file" as const,
     active: document.id === activeDocument?.id
   }));
+  const activeHighlights = activeDocumentId ? highlightsByDocumentId[activeDocumentId] ?? [] : [];
   async function refreshStoredDocuments() {
     const records = await listMarkdownDocuments();
     setStoredDocuments(records);
@@ -254,6 +264,28 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     }
   }
 
+  function handleCreateHighlight(selection: MarkdownPreviewSelection) {
+    if (!activeDocumentId) {
+      return;
+    }
+
+    const newHighlight: PageHighlight = {
+      id: crypto.randomUUID(),
+      startOffset: selection.startOffset,
+      endOffset: selection.endOffset,
+      excerpt: selection.excerpt
+    };
+
+    setHighlightsByDocumentId((currentHighlights) => {
+      const current = currentHighlights[activeDocumentId] ?? [];
+
+      return {
+        ...currentHighlights,
+        [activeDocumentId]: [...current, newHighlight]
+      };
+    });
+  }
+
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current !== null) {
@@ -373,10 +405,33 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                     label={activeDocument.name}
                     content={activeDocument.content}
                     highlightMode={highlightMode}
+                    onCreateHighlight={handleCreateHighlight}
                   />
                 </div>
                 <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
-                  <div className="markdown-viewer__highlights-empty" />
+                  <div className="markdown-viewer-highlights">
+                    <div className="markdown-viewer-highlights__header">
+                      <span>HIGHLIGHTS</span>
+                      <span className="markdown-viewer-highlights__count">{activeHighlights.length}</span>
+                    </div>
+                    <div className="markdown-viewer-highlights__body">
+                      {activeHighlights.length > 0 ? (
+                        activeHighlights.map((highlight, index) => (
+                          <div key={highlight.id} className="markdown-viewer-highlights__item">
+                            <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
+                            <div className="markdown-viewer-highlights__copy">
+                              <div className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</div>
+                              <div className="markdown-viewer-highlights__meta">
+                                <span>{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="markdown-viewer-highlights__empty">No highlights yet.</div>
+                      )}
+                    </div>
+                  </div>
                 </aside>
               </div>
             ) : (

@@ -5,6 +5,13 @@ type MarkdownPreviewProps = {
   content: string;
   label: string;
   highlightMode?: boolean;
+  onCreateHighlight?: (selection: MarkdownPreviewSelection) => void;
+};
+
+export type MarkdownPreviewSelection = {
+  startOffset: number;
+  endOffset: number;
+  excerpt: string;
 };
 
 type InlineSegment =
@@ -40,7 +47,12 @@ const INLINE_PATTERNS: Array<{
   { type: "em", regex: /(\*|_)(.+?)\1/ }
 ];
 
-export function MarkdownPreview({ content, label, highlightMode = false }: MarkdownPreviewProps) {
+export function MarkdownPreview({
+  content,
+  label,
+  highlightMode = false,
+  onCreateHighlight
+}: MarkdownPreviewProps) {
   const blocks = useMemo(() => parseMarkdown(normalizeMarkdownContent(content)), [content]);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
 
@@ -71,7 +83,11 @@ export function MarkdownPreview({ content, label, highlightMode = false }: Markd
     const normalizedStart = Math.min(startOffset, endOffset);
     const normalizedEnd = Math.max(startOffset, endOffset);
 
-    console.log({ startOffset: normalizedStart, endOffset: normalizedEnd });
+    onCreateHighlight?.({
+      startOffset: normalizedStart,
+      endOffset: normalizedEnd,
+      excerpt: normalizeExcerpt(selection.toString())
+    });
   }
 
   return (
@@ -380,6 +396,10 @@ function getSourceElement(container: Node): HTMLElement | null {
   }
 
   return container.parentElement?.closest<HTMLElement>("[data-source-start][data-source-end]") ?? null;
+}
+
+function normalizeExcerpt(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): ReactNode[] {
