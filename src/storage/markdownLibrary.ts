@@ -15,6 +15,7 @@ export type MarkdownLibraryHighlight = {
   createdAt: number;
   updatedAt: number;
   status: MarkdownLibraryHighlightStatus;
+  comment: string | null;
 };
 
 export type MarkdownLibraryDocument = MarkdownLibrarySummary & {
@@ -107,7 +108,7 @@ export async function saveMarkdownDocument(document: {
     createdAt: document.createdAt ?? now,
     updatedAt: now,
     compressedContent,
-    highlights: document.highlights ?? []
+    highlights: normalizeHighlights(document.highlights)
   };
 
   return new Promise((resolve, reject) => {
@@ -188,7 +189,10 @@ function normalizeHighlights(highlights: MarkdownLibraryRecord["highlights"]): M
     return [];
   }
 
-  return highlights.filter(isMarkdownLibraryHighlight).map((highlight) => ({ ...highlight }));
+  return highlights.filter(isMarkdownLibraryHighlight).map((highlight) => ({
+    ...highlight,
+    comment: normalizeComment(highlight.comment)
+  }));
 }
 
 function isMarkdownLibraryHighlight(value: unknown): value is MarkdownLibraryHighlight {
@@ -205,8 +209,13 @@ function isMarkdownLibraryHighlight(value: unknown): value is MarkdownLibraryHig
     typeof highlight.excerpt === "string" &&
     typeof highlight.createdAt === "number" &&
     typeof highlight.updatedAt === "number" &&
-    (highlight.status === "resolved" || highlight.status === "unresolved")
+    (highlight.status === "resolved" || highlight.status === "unresolved") &&
+    (typeof highlight.comment === "string" || highlight.comment === null || highlight.comment === undefined)
   );
+}
+
+function normalizeComment(comment: unknown): string | null {
+  return typeof comment === "string" ? comment : null;
 }
 
 async function compressText(content: string): Promise<ArrayBuffer> {

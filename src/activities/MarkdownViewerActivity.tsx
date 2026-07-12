@@ -288,7 +288,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
       return;
     }
 
-    const now = Date.now();
+  const now = Date.now();
     const newHighlight: PageHighlight = {
       id: crypto.randomUUID(),
       startOffset: selection.startOffset,
@@ -296,7 +296,8 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
       excerpt: selection.excerpt,
       createdAt: now,
       updatedAt: now,
-      status: "resolved"
+      status: "resolved",
+      comment: null
     };
 
     const nextHighlights = [...activeDocument.highlights, newHighlight];
@@ -376,6 +377,38 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   function closeCommentComposer() {
     setCommentComposerTarget(null);
     setCommentDraft("");
+  }
+
+  async function saveCommentToStorage() {
+    if (!activeDocument || !commentComposerTarget) {
+      return;
+    }
+
+    const comment = commentDraft.trim().length > 0 ? commentDraft.trim() : null;
+    const now = Date.now();
+    const nextHighlights = activeDocument.highlights.map((highlight) =>
+      highlight.id === commentComposerTarget.highlightId
+        ? {
+            ...highlight,
+            comment,
+            updatedAt: now
+          }
+        : highlight
+    );
+
+    setOpenDocuments((currentOpenDocuments) =>
+      currentOpenDocuments.map((document) =>
+        document.id === activeDocument.id ? { ...document, highlights: nextHighlights } : document
+      )
+    );
+
+    try {
+      await updateMarkdownDocumentHighlights(activeDocument.id, nextHighlights);
+      closeCommentComposer();
+      onStorageChange?.();
+    } catch (error) {
+      console.error(`Failed to save comment for ${activeDocument.name}.`, error);
+    }
   }
 
   function confirmDeleteHighlight() {
@@ -560,7 +593,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                                   <button
                                     type="button"
                                     className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--primary"
-                                    onClick={closeCommentComposer}
+                                    onClick={saveCommentToStorage}
                                   >
                                     Save
                                   </button>
