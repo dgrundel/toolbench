@@ -38,6 +38,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
+  const previewPaneRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     activeDocumentIdRef.current = activeDocumentId;
@@ -286,6 +287,21 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     });
   }
 
+  function scrollToHighlight(highlight: PageHighlight) {
+    const previewPane = previewPaneRef.current;
+
+    if (!previewPane) {
+      return;
+    }
+
+    const anchor =
+      previewPane.querySelector<HTMLElement>(
+        `[data-source-start="${highlight.startOffset}"][data-source-end="${highlight.endOffset}"]`
+      ) ?? previewPane.querySelector<HTMLElement>(`[data-source-start="${highlight.startOffset}"]`);
+
+    anchor?.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+  }
+
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current !== null) {
@@ -400,7 +416,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
             {activeDocument ? (
               <div className="markdown-viewer__workspace">
-                <div className="markdown-viewer__preview-pane">
+                <div className="markdown-viewer__preview-pane" ref={previewPaneRef}>
                   <MarkdownPreview
                     label={activeDocument.name}
                     content={activeDocument.content}
@@ -418,15 +434,20 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                     <div className="markdown-viewer-highlights__body">
                       {activeHighlights.length > 0 ? (
                         activeHighlights.map((highlight, index) => (
-                          <div key={highlight.id} className="markdown-viewer-highlights__item">
+                          <button
+                            key={highlight.id}
+                            type="button"
+                            className="markdown-viewer-highlights__item"
+                            onClick={() => scrollToHighlight(highlight)}
+                          >
                             <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
-                            <div className="markdown-viewer-highlights__copy">
-                              <div className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</div>
-                              <div className="markdown-viewer-highlights__meta">
+                            <span className="markdown-viewer-highlights__copy">
+                              <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
+                              <span className="markdown-viewer-highlights__meta">
                                 <span>{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
-                              </div>
-                            </div>
-                          </div>
+                              </span>
+                            </span>
+                          </button>
                         ))
                       ) : (
                         <div className="markdown-viewer-highlights__empty">No highlights yet.</div>

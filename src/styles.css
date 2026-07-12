@@ -730,6 +730,7 @@ button:focus-visible {
 }
 
 .markdown-viewer-highlights__item {
+  width: 100%;
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr);
   gap: 10px;
@@ -738,10 +739,18 @@ button:focus-visible {
   border: 1px solid var(--line-soft);
   background: #ffffff;
   box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
 }
 
 .markdown-viewer-highlights__item + .markdown-viewer-highlights__item {
   margin-top: 8px;
+}
+
+.markdown-viewer-highlights__item:hover,
+.markdown-viewer-highlights__item:focus-visible {
+  border-color: rgba(0, 122, 204, 0.35);
+  background: #fcfdff;
 }
 
 .markdown-viewer-highlights__swatch {
