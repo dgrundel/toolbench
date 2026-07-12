@@ -95,6 +95,10 @@ export function MarkdownPreview({
       endOffset: normalizedEnd,
       excerpt: normalizeExcerpt(selection.toString())
     });
+
+    if (surfaceRef.current.contains(selection.anchorNode) || surfaceRef.current.contains(selection.focusNode)) {
+      selection.removeAllRanges();
+    }
   }
 
   return (
