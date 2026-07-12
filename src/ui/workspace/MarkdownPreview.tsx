@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { normalizeMarkdownContent } from "../../storage/markdownText";
 
 type MarkdownPreviewProps = {
   content: string;
   label: string;
+  highlightMode?: boolean;
 };
 
 type InlineSegment =
@@ -39,12 +40,43 @@ const INLINE_PATTERNS: Array<{
   { type: "em", regex: /(\*|_)(.+?)\1/ }
 ];
 
-export function MarkdownPreview({ content, label }: MarkdownPreviewProps) {
+export function MarkdownPreview({ content, label, highlightMode = false }: MarkdownPreviewProps) {
   const blocks = useMemo(() => parseMarkdown(normalizeMarkdownContent(content)), [content]);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+
+  function handleMouseUp() {
+    if (!highlightMode || !surfaceRef.current) {
+      return;
+    }
+
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    if (!surfaceRef.current.contains(range.commonAncestorContainer)) {
+      return;
+    }
+
+    const startOffset = getBoundaryOffset(range.startContainer, range.startOffset);
+    const endOffset = getBoundaryOffset(range.endContainer, range.endOffset);
+
+    if (startOffset === null || endOffset === null) {
+      return;
+    }
+
+    const normalizedStart = Math.min(startOffset, endOffset);
+    const normalizedEnd = Math.max(startOffset, endOffset);
+
+    console.log({ startOffset: normalizedStart, endOffset: normalizedEnd });
+  }
 
   return (
     <article className="markdown-preview" aria-label={label}>
-      <div className="markdown-preview__surface">
+      <div className="markdown-preview__surface" ref={surfaceRef} onMouseUp={handleMouseUp}>
         {blocks.length > 0 ? (
           blocks.map((block, index) => renderBlock(block, `${label}-${index}`))
         ) : (
@@ -324,6 +356,30 @@ function headingSizeForLevel(level: 1 | 2 | 3 | 4 | 5 | 6): string {
     case 6:
       return "0.92rem";
   }
+}
+
+function getBoundaryOffset(container: Node, offset: number): number | null {
+  const element = getSourceElement(container);
+
+  if (!element) {
+    return null;
+  }
+
+  const sourceStart = Number(element.dataset.sourceStart);
+
+  if (!Number.isFinite(sourceStart)) {
+    return null;
+  }
+
+  return sourceStart + offset;
+}
+
+function getSourceElement(container: Node): HTMLElement | null {
+  if (container.nodeType === Node.ELEMENT_NODE) {
+    return container as HTMLElement;
+  }
+
+  return container.parentElement?.closest<HTMLElement>("[data-source-start][data-source-end]") ?? null;
 }
 
 function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): ReactNode[] {

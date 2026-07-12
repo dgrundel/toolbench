@@ -369,7 +369,11 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
             {activeDocument ? (
               <div className="markdown-viewer__workspace">
                 <div className="markdown-viewer__preview-pane">
-                  <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
+                  <MarkdownPreview
+                    label={activeDocument.name}
+                    content={activeDocument.content}
+                    highlightMode={highlightMode}
+                  />
                 </div>
                 <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
                   <div className="markdown-viewer__highlights-empty" />
