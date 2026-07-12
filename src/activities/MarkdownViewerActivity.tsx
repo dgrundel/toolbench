@@ -32,6 +32,11 @@ type HighlightDeleteTarget = {
   highlight: PageHighlight;
 };
 
+type CommentComposerTarget = {
+  documentId: string;
+  highlightId: string;
+} | null;
+
 export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
   const [storedDocuments, setStoredDocuments] = useState<MarkdownLibrarySummary[]>([]);
   const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
@@ -40,6 +45,8 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const [highlightMode, setHighlightMode] = useState(false);
   const [highlightDeleteTarget, setHighlightDeleteTarget] = useState<HighlightDeleteTarget | null>(null);
+  const [commentComposerTarget, setCommentComposerTarget] = useState<CommentComposerTarget>(null);
+  const [commentDraft, setCommentDraft] = useState("");
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
@@ -87,6 +94,10 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     active: document.id === activeDocument?.id
   }));
   const activeHighlights = activeDocument?.highlights ?? [];
+  const openCommentHighlight =
+    activeDocument && commentComposerTarget?.documentId === activeDocument.id
+      ? activeHighlights.find((highlight) => highlight.id === commentComposerTarget.highlightId) ?? null
+      : null;
   async function refreshStoredDocuments() {
     const records = await listMarkdownDocuments();
     setStoredDocuments(records);
@@ -340,6 +351,33 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     });
   }
 
+  function toggleCommentComposer(highlight: PageHighlight) {
+    if (!activeDocument) {
+      return;
+    }
+
+    const isOpen =
+      commentComposerTarget?.documentId === activeDocument.id &&
+      commentComposerTarget.highlightId === highlight.id;
+
+    if (isOpen) {
+      setCommentComposerTarget(null);
+      setCommentDraft("");
+      return;
+    }
+
+    setCommentComposerTarget({
+      documentId: activeDocument.id,
+      highlightId: highlight.id
+    });
+    setCommentDraft("");
+  }
+
+  function closeCommentComposer() {
+    setCommentComposerTarget(null);
+    setCommentDraft("");
+  }
+
   function confirmDeleteHighlight() {
     if (!highlightDeleteTarget) {
       return;
@@ -502,19 +540,65 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                               <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
                               <span className="markdown-viewer-highlights__meta">{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
                             </span>
-                            <span className="markdown-viewer-highlights__actions">
-                              <button
-                                type="button"
-                                className="markdown-viewer-highlights__jump"
-                                aria-label={`Jump to highlight: ${highlight.excerpt}`}
-                                onClick={() => scrollToHighlight(highlight)}
-                              >
-                                <WorkspaceIcon
-                                  name="bookmark"
-                                  size={14}
-                                  className="markdown-viewer-highlights__jump-icon"
+                            {openCommentHighlight?.id === highlight.id ? (
+                              <div className="markdown-viewer-highlights__comment-form">
+                                <textarea
+                                  className="markdown-viewer-highlights__comment-input"
+                                  value={commentDraft}
+                                  onChange={(event) => setCommentDraft(event.target.value)}
+                                  placeholder="Write a comment..."
+                                  rows={3}
                                 />
-                              </button>
+                                <div className="markdown-viewer-highlights__comment-actions">
+                                  <button
+                                    type="button"
+                                    className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--secondary"
+                                    onClick={closeCommentComposer}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--primary"
+                                    onClick={closeCommentComposer}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
+                            <span className="markdown-viewer-highlights__actions">
+                              <span className="markdown-viewer-highlights__actions-primary">
+                                <button
+                                  type="button"
+                                  className="markdown-viewer-highlights__jump"
+                                  aria-label={`Jump to highlight: ${highlight.excerpt}`}
+                                  onClick={() => scrollToHighlight(highlight)}
+                                >
+                                  <WorkspaceIcon
+                                    name="bookmark"
+                                    size={14}
+                                    className="markdown-viewer-highlights__jump-icon"
+                                  />
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`markdown-viewer-highlights__comment-toggle ${
+                                    openCommentHighlight?.id === highlight.id
+                                      ? "markdown-viewer-highlights__comment-toggle--active"
+                                      : ""
+                                  }`}
+                                  aria-label={`Comment on highlight: ${highlight.excerpt}`}
+                                  aria-pressed={openCommentHighlight?.id === highlight.id}
+                                  onClick={() => toggleCommentComposer(highlight)}
+                                >
+                                  <WorkspaceIcon
+                                    name="comment"
+                                    size={14}
+                                    className="markdown-viewer-highlights__comment-toggle-icon"
+                                  />
+                                </button>
+                              </span>
                               <button
                                 type="button"
                                 className="markdown-viewer-highlights__delete"

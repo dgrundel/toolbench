@@ -794,6 +794,73 @@ button:focus-visible {
   gap: 4px;
 }
 
+.markdown-viewer-highlights__comment-form {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.markdown-viewer-highlights__comment-input {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  padding: 9px 10px;
+  border: 1px solid var(--line-soft);
+  background: #ffffff;
+  color: #2f3441;
+  font: inherit;
+  line-height: 1.5;
+  border-radius: 3px;
+  outline: none;
+}
+
+.markdown-viewer-highlights__comment-input:focus {
+  border-color: rgba(0, 122, 204, 0.35);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.08);
+}
+
+.markdown-viewer-highlights__comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.markdown-viewer-highlights__comment-action {
+  min-width: 64px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #3b424d;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.markdown-viewer-highlights__comment-action--secondary:hover,
+.markdown-viewer-highlights__comment-action--secondary:focus-visible {
+  border-color: rgba(0, 122, 204, 0.18);
+  background: rgba(0, 122, 204, 0.08);
+  color: #0b73b9;
+}
+
+.markdown-viewer-highlights__comment-action--primary {
+  background: #0b73b9;
+  color: #ffffff;
+}
+
+.markdown-viewer-highlights__comment-action--primary:hover,
+.markdown-viewer-highlights__comment-action--primary:focus-visible {
+  background: #09679e;
+}
+
 .markdown-viewer-highlights__excerpt {
   color: #2f3441;
   font-size: 0.88rem;
@@ -814,6 +881,12 @@ button:focus-visible {
   gap: 8px;
   margin-top: 2px;
   grid-column: 1 / -1;
+}
+
+.markdown-viewer-highlights__actions-primary {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .markdown-viewer-highlights__jump {
@@ -837,6 +910,31 @@ button:focus-visible {
 }
 
 .markdown-viewer-highlights__jump-icon {
+  pointer-events: none;
+}
+
+.markdown-viewer-highlights__comment-toggle {
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #6f7682;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.markdown-viewer-highlights__comment-toggle:hover,
+.markdown-viewer-highlights__comment-toggle:focus-visible,
+.markdown-viewer-highlights__comment-toggle--active {
+  border-color: rgba(0, 122, 204, 0.22);
+  background: rgba(0, 122, 204, 0.08);
+  color: #0b73b9;
+}
+
+.markdown-viewer-highlights__comment-toggle-icon {
   pointer-events: none;
 }
 

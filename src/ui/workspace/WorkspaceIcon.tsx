@@ -1,6 +1,7 @@
 import {
   IconDotsVertical,
   IconCopy,
+  IconMessage2,
   IconFileCode,
   IconFileTypeCss,
   IconFileTypeHtml,
@@ -31,6 +32,7 @@ type WorkspaceIconName =
   | "folder"
   | "delete"
   | "copy"
+  | "comment"
   | "highlight"
   | "highlight-off"
   | "bookmark"
@@ -56,6 +58,7 @@ const iconMap = {
   folder: IconFolder,
   delete: IconTrash,
   copy: IconCopy,
+  comment: IconMessage2,
   highlight: IconHighlight,
   "highlight-off": IconHighlightOff,
   bookmark: IconBookmark,
