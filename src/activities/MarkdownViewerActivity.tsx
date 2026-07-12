@@ -357,6 +357,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
       return;
     }
 
+    const currentHighlight = activeDocument.highlights.find((item) => item.id === highlight.id) ?? null;
     const isOpen =
       commentComposerTarget?.documentId === activeDocument.id &&
       commentComposerTarget.highlightId === highlight.id;
@@ -371,12 +372,16 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
       documentId: activeDocument.id,
       highlightId: highlight.id
     });
-    setCommentDraft("");
+    setCommentDraft(currentHighlight?.comment ?? "");
   }
 
   function closeCommentComposer() {
     setCommentComposerTarget(null);
     setCommentDraft("");
+  }
+
+  function getHighlightComment(highlight: PageHighlight): string | null {
+    return typeof highlight.comment === "string" && highlight.comment.trim().length > 0 ? highlight.comment : null;
   }
 
   async function saveCommentToStorage() {
@@ -597,6 +602,13 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                                   >
                                     Save
                                   </button>
+                                </div>
+                              </div>
+                            ) : getHighlightComment(highlight) ? (
+                              <div className="markdown-viewer-highlights__comment-display">
+                                <div className="markdown-viewer-highlights__comment-display-label">Comment</div>
+                                <div className="markdown-viewer-highlights__comment-display-body">
+                                  {getHighlightComment(highlight)}
                                 </div>
                               </div>
                             ) : null}
