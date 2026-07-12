@@ -657,6 +657,10 @@ function wrapTextNodes(node: MarkdownNode) {
         continue;
       }
 
+      if (shouldSkipWhitespaceTextNode(node, text)) {
+        continue;
+      }
+
       const start = child.position?.start?.offset ?? 0;
       const end = child.position?.end?.offset ?? start + text.length;
 
@@ -679,6 +683,10 @@ function wrapTextNodes(node: MarkdownNode) {
   }
 
   node.children = nextChildren;
+}
+
+function shouldSkipWhitespaceTextNode(parent: MarkdownNode, text: string): boolean {
+  return parent.tagName === "li" && text.trim().length === 0;
 }
 
 function getBoundaryOffset(container: Node, offset: number): number | null {
