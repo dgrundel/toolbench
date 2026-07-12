@@ -732,7 +732,7 @@ button:focus-visible {
 .markdown-viewer-highlights__item {
   width: 100%;
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) 26px;
+  grid-template-columns: 26px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   padding: 10px 8px;
@@ -777,6 +777,15 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.markdown-viewer-highlights__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  grid-column: 1 / -1;
+}
+
 .markdown-viewer-highlights__jump {
   width: 26px;
   height: 26px;
@@ -798,6 +807,30 @@ button:focus-visible {
 }
 
 .markdown-viewer-highlights__jump-icon {
+  pointer-events: none;
+}
+
+.markdown-viewer-highlights__delete {
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8a909b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.markdown-viewer-highlights__delete:hover,
+.markdown-viewer-highlights__delete:focus-visible {
+  border-color: rgba(190, 54, 54, 0.18);
+  background: rgba(190, 54, 54, 0.08);
+  color: #a72f2f;
+}
+
+.markdown-viewer-highlights__delete-icon {
   pointer-events: none;
 }
 

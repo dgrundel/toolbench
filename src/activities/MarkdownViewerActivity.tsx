@@ -287,6 +287,22 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     });
   }
 
+  function handleDeleteHighlight(highlightId: string) {
+    if (!activeDocumentId) {
+      return;
+    }
+
+    setHighlightsByDocumentId((currentHighlights) => {
+      const current = currentHighlights[activeDocumentId] ?? [];
+      const nextHighlights = current.filter((highlight) => highlight.id !== highlightId);
+
+      return {
+        ...currentHighlights,
+        [activeDocumentId]: nextHighlights
+      };
+    });
+  }
+
   function scrollToHighlight(highlight: PageHighlight) {
     const previewPane = previewPaneRef.current;
 
@@ -440,14 +456,32 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                               <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
                               <span className="markdown-viewer-highlights__meta">{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
                             </span>
-                            <button
-                              type="button"
-                              className="markdown-viewer-highlights__jump"
-                              aria-label={`Jump to highlight: ${highlight.excerpt}`}
-                              onClick={() => scrollToHighlight(highlight)}
-                            >
-                              <WorkspaceIcon name="bookmark" size={14} className="markdown-viewer-highlights__jump-icon" />
-                            </button>
+                            <span className="markdown-viewer-highlights__actions">
+                              <button
+                                type="button"
+                                className="markdown-viewer-highlights__jump"
+                                aria-label={`Jump to highlight: ${highlight.excerpt}`}
+                                onClick={() => scrollToHighlight(highlight)}
+                              >
+                                <WorkspaceIcon
+                                  name="bookmark"
+                                  size={14}
+                                  className="markdown-viewer-highlights__jump-icon"
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                className="markdown-viewer-highlights__delete"
+                                aria-label={`Delete highlight: ${highlight.excerpt}`}
+                                onClick={() => handleDeleteHighlight(highlight.id)}
+                              >
+                                <WorkspaceIcon
+                                  name="delete"
+                                  size={14}
+                                  className="markdown-viewer-highlights__delete-icon"
+                                />
+                              </button>
+                            </span>
                           </div>
                         ))
                       ) : (
