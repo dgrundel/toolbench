@@ -405,6 +405,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                     label={activeDocument.name}
                     content={activeDocument.content}
                     highlightMode={highlightMode}
+                    highlights={activeHighlights}
                     onCreateHighlight={handleCreateHighlight}
                   />
                 </div>

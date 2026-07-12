@@ -5,6 +5,7 @@ type MarkdownPreviewProps = {
   content: string;
   label: string;
   highlightMode?: boolean;
+  highlights?: MarkdownPreviewHighlight[];
   onCreateHighlight?: (selection: MarkdownPreviewSelection) => void;
 };
 
@@ -12,6 +13,11 @@ export type MarkdownPreviewSelection = {
   startOffset: number;
   endOffset: number;
   excerpt: string;
+};
+
+export type MarkdownPreviewHighlight = {
+  startOffset: number;
+  endOffset: number;
 };
 
 type InlineSegment =
@@ -51,6 +57,7 @@ export function MarkdownPreview({
   content,
   label,
   highlightMode = false,
+  highlights = [],
   onCreateHighlight
 }: MarkdownPreviewProps) {
   const blocks = useMemo(() => parseMarkdown(normalizeMarkdownContent(content)), [content]);
@@ -94,7 +101,7 @@ export function MarkdownPreview({
     <article className="markdown-preview" aria-label={label}>
       <div className="markdown-preview__surface" ref={surfaceRef} onMouseUp={handleMouseUp}>
         {blocks.length > 0 ? (
-          blocks.map((block, index) => renderBlock(block, `${label}-${index}`))
+          blocks.map((block, index) => renderBlock(block, `${label}-${index}`, highlights))
         ) : (
           <div className="markdown-preview__empty">
             <p className="markdown-preview__empty-message">This document is empty.</p>
@@ -117,7 +124,7 @@ export function markdownToClipboardHtml(content: string): string {
     .join("")}</div>`;
 }
 
-function renderBlock(block: MarkdownBlock, key: string): ReactNode {
+function renderBlock(block: MarkdownBlock, key: string, highlights: MarkdownPreviewHighlight[]): ReactNode {
   switch (block.type) {
     case "heading":
       switch (block.level) {
@@ -129,7 +136,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h1>
           );
         case 2:
@@ -140,7 +147,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h2>
           );
         case 3:
@@ -151,7 +158,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h3>
           );
         case 4:
@@ -162,7 +169,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h4>
           );
         case 5:
@@ -173,7 +180,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h5>
           );
         case 6:
@@ -184,7 +191,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={block.sourceStart}
               data-source-end={block.sourceEnd}
             >
-              {renderInlineSegments(block.content, key)}
+              {renderInlineSegments(block.content, key, highlights)}
             </h6>
           );
         default:
@@ -198,7 +205,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
           data-source-start={block.sourceStart}
           data-source-end={block.sourceEnd}
         >
-          {renderInlineSegments(block.content, key)}
+          {renderInlineSegments(block.content, key, highlights)}
         </p>
       );
     case "blockquote":
@@ -209,7 +216,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
           data-source-start={block.sourceStart}
           data-source-end={block.sourceEnd}
         >
-          <p>{renderInlineSegments(block.content, key)}</p>
+          <p>{renderInlineSegments(block.content, key, highlights)}</p>
         </blockquote>
       );
     case "list":
@@ -226,7 +233,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={item[0]?.sourceStart}
               data-source-end={item[item.length - 1]?.sourceEnd}
             >
-              {renderInlineSegments(item, `${key}-item-${index}`)}
+              {renderInlineSegments(item, `${key}-item-${index}`, highlights)}
             </li>
           ))}
         </ol>
@@ -243,7 +250,7 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
               data-source-start={item[0]?.sourceStart}
               data-source-end={item[item.length - 1]?.sourceEnd}
             >
-              {renderInlineSegments(item, `${key}-item-${index}`)}
+              {renderInlineSegments(item, `${key}-item-${index}`, highlights)}
             </li>
           ))}
         </ul>
@@ -402,48 +409,157 @@ function normalizeExcerpt(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): ReactNode[] {
+function renderLeafWithHighlights(
+  keyPrefix: string,
+  text: string,
+  sourceStart: number,
+  sourceEnd: number,
+  highlights: MarkdownPreviewHighlight[],
+  elementType: "span" | "code",
+  className?: string
+): ReactNode[] {
+  const pieces = splitLeafByHighlights(text, sourceStart, sourceEnd, highlights);
+
+  return pieces.map((piece, index) => {
+    const key = `${keyPrefix}-${index}`;
+
+    if (piece.highlighted) {
+      const mark = (
+        <mark
+          key={key}
+          className="markdown-preview__highlight"
+          data-source-start={piece.sourceStart}
+          data-source-end={piece.sourceEnd}
+        >
+          {piece.text}
+        </mark>
+      );
+
+      if (elementType === "code") {
+        return (
+          <code key={key} className={className} data-source-start={sourceStart} data-source-end={sourceEnd}>
+            {mark}
+          </code>
+        );
+      }
+
+      return mark;
+    }
+
+    if (elementType === "code") {
+      return (
+        <code key={key} className={className} data-source-start={piece.sourceStart} data-source-end={piece.sourceEnd}>
+          {piece.text}
+        </code>
+      );
+    }
+
+    return (
+      <span key={key} data-source-start={piece.sourceStart} data-source-end={piece.sourceEnd}>
+        {piece.text}
+      </span>
+    );
+  });
+}
+
+function splitLeafByHighlights(
+  text: string,
+  sourceStart: number,
+  sourceEnd: number,
+  highlights: MarkdownPreviewHighlight[]
+): Array<{ text: string; sourceStart: number; sourceEnd: number; highlighted: boolean }> {
+  const overlapping = highlights
+    .filter((highlight) => highlight.startOffset < sourceEnd && highlight.endOffset > sourceStart)
+    .sort((left, right) => left.startOffset - right.startOffset || left.endOffset - right.endOffset);
+
+  if (overlapping.length === 0) {
+    return [{ text, sourceStart, sourceEnd, highlighted: false }];
+  }
+
+  const boundaries = new Set<number>([sourceStart, sourceEnd]);
+
+  for (const highlight of overlapping) {
+    boundaries.add(clamp(highlight.startOffset, sourceStart, sourceEnd));
+    boundaries.add(clamp(highlight.endOffset, sourceStart, sourceEnd));
+  }
+
+  const ordered = [...boundaries].sort((left, right) => left - right);
+  const pieces: Array<{ text: string; sourceStart: number; sourceEnd: number; highlighted: boolean }> = [];
+
+  for (let index = 0; index < ordered.length - 1; index += 1) {
+    const pieceStart = ordered[index];
+    const pieceEnd = ordered[index + 1];
+
+    if (pieceEnd <= pieceStart) {
+      continue;
+    }
+
+    const pieceText = text.slice(pieceStart - sourceStart, pieceEnd - sourceStart);
+    const highlighted = overlapping.some(
+      (highlight) => highlight.startOffset <= pieceStart && highlight.endOffset >= pieceEnd
+    );
+
+    if (pieceText.length > 0) {
+      pieces.push({
+        text: pieceText,
+        sourceStart: pieceStart,
+        sourceEnd: pieceEnd,
+        highlighted
+      });
+    }
+  }
+
+  return pieces.length > 0 ? pieces : [{ text, sourceStart, sourceEnd, highlighted: false }];
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function renderInlineSegments(
+  segments: InlineSegment[],
+  keyPrefix: string,
+  highlights: MarkdownPreviewHighlight[]
+): ReactNode[] {
   return segments.map((segment, index) => {
     const key = `${keyPrefix}-${index}`;
 
     switch (segment.type) {
       case "text":
-        return (
-          <span
-            key={key}
-            data-source-start={segment.sourceStart}
-            data-source-end={segment.sourceEnd}
-          >
-            {segment.value}
-          </span>
+        return renderLeafWithHighlights(
+          key,
+          segment.value,
+          segment.sourceStart,
+          segment.sourceEnd,
+          highlights,
+          "span"
         );
       case "code":
-        return (
-          <code
-            key={key}
-            className="markdown-preview__inline-code"
-            data-source-start={segment.sourceStart}
-            data-source-end={segment.sourceEnd}
-          >
-            {segment.value}
-          </code>
+        return renderLeafWithHighlights(
+          key,
+          segment.value,
+          segment.sourceStart,
+          segment.sourceEnd,
+          highlights,
+          "code",
+          "markdown-preview__inline-code"
         );
       case "strong":
         return (
           <strong key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
-            {renderInlineSegments(segment.value, key)}
+            {renderInlineSegments(segment.value, key, highlights)}
           </strong>
         );
       case "em":
         return (
           <em key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
-            {renderInlineSegments(segment.value, key)}
+            {renderInlineSegments(segment.value, key, highlights)}
           </em>
         );
       case "strike":
         return (
           <del key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
-            {renderInlineSegments(segment.value, key)}
+            {renderInlineSegments(segment.value, key, highlights)}
           </del>
         );
       case "link":
@@ -457,7 +573,7 @@ function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): Rea
             data-source-start={segment.sourceStart}
             data-source-end={segment.sourceEnd}
           >
-            {renderInlineSegments(segment.text, key)}
+            {renderInlineSegments(segment.text, key, highlights)}
           </a>
         );
       default:
