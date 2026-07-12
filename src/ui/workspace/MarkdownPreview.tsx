@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from "react";
+import { normalizeMarkdownContent } from "../../storage/markdownText";
 
 type MarkdownPreviewProps = {
   content: string;
@@ -6,20 +7,26 @@ type MarkdownPreviewProps = {
 };
 
 type InlineSegment =
-  | { type: "text"; value: string }
-  | { type: "code"; value: string }
-  | { type: "strong"; value: InlineSegment[] }
-  | { type: "em"; value: InlineSegment[] }
-  | { type: "strike"; value: InlineSegment[] }
-  | { type: "link"; text: InlineSegment[]; href: string };
+  | { type: "text"; value: string; sourceStart: number; sourceEnd: number }
+  | { type: "code"; value: string; sourceStart: number; sourceEnd: number }
+  | { type: "strong"; value: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "em"; value: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "strike"; value: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "link"; text: InlineSegment[]; href: string; sourceStart: number; sourceEnd: number };
 
 type MarkdownBlock =
-  | { type: "heading"; level: 1 | 2 | 3 | 4 | 5 | 6; content: InlineSegment[] }
-  | { type: "paragraph"; content: InlineSegment[] }
-  | { type: "blockquote"; content: InlineSegment[] }
-  | { type: "list"; ordered: boolean; items: InlineSegment[][] }
-  | { type: "code"; language: string; content: string }
-  | { type: "rule" };
+  | { type: "heading"; level: 1 | 2 | 3 | 4 | 5 | 6; content: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "paragraph"; content: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "blockquote"; content: InlineSegment[]; sourceStart: number; sourceEnd: number }
+  | { type: "list"; ordered: boolean; items: InlineSegment[][]; sourceStart: number; sourceEnd: number }
+  | { type: "code"; language: string; content: string; sourceStart: number; sourceEnd: number }
+  | { type: "rule"; sourceStart: number; sourceEnd: number };
+
+type LineEntry = {
+  text: string;
+  start: number;
+  end: number;
+};
 
 const INLINE_PATTERNS: Array<{
   type: InlineSegment["type"];
@@ -33,7 +40,7 @@ const INLINE_PATTERNS: Array<{
 ];
 
 export function MarkdownPreview({ content, label }: MarkdownPreviewProps) {
-  const blocks = useMemo(() => parseMarkdown(content), [content]);
+  const blocks = useMemo(() => parseMarkdown(normalizeMarkdownContent(content)), [content]);
 
   return (
     <article className="markdown-preview" aria-label={label}>
@@ -51,7 +58,7 @@ export function MarkdownPreview({ content, label }: MarkdownPreviewProps) {
 }
 
 export function markdownToClipboardHtml(content: string): string {
-  const blocks = parseMarkdown(content);
+  const blocks = parseMarkdown(normalizeMarkdownContent(content));
 
   if (blocks.length === 0) {
     return "";
@@ -68,37 +75,67 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
       switch (block.level) {
         case 1:
           return (
-            <h1 key={key} className="markdown-preview__heading markdown-preview__heading--1">
+            <h1
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--1"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h1>
           );
         case 2:
           return (
-            <h2 key={key} className="markdown-preview__heading markdown-preview__heading--2">
+            <h2
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--2"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h2>
           );
         case 3:
           return (
-            <h3 key={key} className="markdown-preview__heading markdown-preview__heading--3">
+            <h3
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--3"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h3>
           );
         case 4:
           return (
-            <h4 key={key} className="markdown-preview__heading markdown-preview__heading--4">
+            <h4
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--4"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h4>
           );
         case 5:
           return (
-            <h5 key={key} className="markdown-preview__heading markdown-preview__heading--5">
+            <h5
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--5"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h5>
           );
         case 6:
           return (
-            <h6 key={key} className="markdown-preview__heading markdown-preview__heading--6">
+            <h6
+              key={key}
+              className="markdown-preview__heading markdown-preview__heading--6"
+              data-source-start={block.sourceStart}
+              data-source-end={block.sourceEnd}
+            >
               {renderInlineSegments(block.content, key)}
             </h6>
           );
@@ -107,33 +144,70 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
       }
     case "paragraph":
       return (
-        <p key={key} className="markdown-preview__paragraph">
+        <p
+          key={key}
+          className="markdown-preview__paragraph"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        >
           {renderInlineSegments(block.content, key)}
         </p>
       );
     case "blockquote":
       return (
-        <blockquote key={key} className="markdown-preview__blockquote">
+        <blockquote
+          key={key}
+          className="markdown-preview__blockquote"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        >
           <p>{renderInlineSegments(block.content, key)}</p>
         </blockquote>
       );
     case "list":
       return block.ordered ? (
-        <ol key={key} className="markdown-preview__list">
+        <ol
+          key={key}
+          className="markdown-preview__list"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        >
           {block.items.map((item, index) => (
-            <li key={`${key}-item-${index}`}>{renderInlineSegments(item, `${key}-item-${index}`)}</li>
+            <li
+              key={`${key}-item-${index}`}
+              data-source-start={item[0]?.sourceStart}
+              data-source-end={item[item.length - 1]?.sourceEnd}
+            >
+              {renderInlineSegments(item, `${key}-item-${index}`)}
+            </li>
           ))}
         </ol>
       ) : (
-        <ul key={key} className="markdown-preview__list">
+        <ul
+          key={key}
+          className="markdown-preview__list"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        >
           {block.items.map((item, index) => (
-            <li key={`${key}-item-${index}`}>{renderInlineSegments(item, `${key}-item-${index}`)}</li>
+            <li
+              key={`${key}-item-${index}`}
+              data-source-start={item[0]?.sourceStart}
+              data-source-end={item[item.length - 1]?.sourceEnd}
+            >
+              {renderInlineSegments(item, `${key}-item-${index}`)}
+            </li>
           ))}
         </ul>
       );
     case "code":
       return (
-        <figure key={key} className="markdown-preview__codeblock">
+        <figure
+          key={key}
+          className="markdown-preview__codeblock"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        >
           {block.language ? <figcaption className="markdown-preview__code-language">{block.language}</figcaption> : null}
           <pre className="markdown-preview__code">
             <code>{block.content}</code>
@@ -141,7 +215,14 @@ function renderBlock(block: MarkdownBlock, key: string): ReactNode {
         </figure>
       );
     case "rule":
-      return <hr key={key} className="markdown-preview__rule" />;
+      return (
+        <hr
+          key={key}
+          className="markdown-preview__rule"
+          data-source-start={block.sourceStart}
+          data-source-end={block.sourceEnd}
+        />
+      );
     default:
       return null;
   }
@@ -206,13 +287,19 @@ function renderInlineSegmentsAsHtml(segments: InlineSegment[]): string {
             segment.value
           )}</code>`;
         case "strong":
-          return `<strong>${renderInlineSegmentsAsHtml(segment.value)}</strong>`;
+          return `<strong data-source-start="${segment.sourceStart}" data-source-end="${segment.sourceEnd}">${renderInlineSegmentsAsHtml(
+            segment.value
+          )}</strong>`;
         case "em":
-          return `<em>${renderInlineSegmentsAsHtml(segment.value)}</em>`;
+          return `<em data-source-start="${segment.sourceStart}" data-source-end="${segment.sourceEnd}">${renderInlineSegmentsAsHtml(
+            segment.value
+          )}</em>`;
         case "strike":
-          return `<del>${renderInlineSegmentsAsHtml(segment.value)}</del>`;
+          return `<del data-source-start="${segment.sourceStart}" data-source-end="${segment.sourceEnd}">${renderInlineSegmentsAsHtml(
+            segment.value
+          )}</del>`;
         case "link":
-          return `<a style="color:#0b73b9;text-decoration:none;border-bottom:1px solid rgba(0,122,204,0.22);" href="${escapeAttribute(
+          return `<a data-source-start="${segment.sourceStart}" data-source-end="${segment.sourceEnd}" style="color:#0b73b9;text-decoration:none;border-bottom:1px solid rgba(0,122,204,0.22);" href="${escapeAttribute(
             segment.href
           )}" target="_blank" rel="noreferrer">${renderInlineSegmentsAsHtml(segment.text)}</a>`;
         default:
@@ -245,22 +332,55 @@ function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): Rea
 
     switch (segment.type) {
       case "text":
-        return segment.value;
+        return (
+          <span
+            key={key}
+            data-source-start={segment.sourceStart}
+            data-source-end={segment.sourceEnd}
+          >
+            {segment.value}
+          </span>
+        );
       case "code":
         return (
-          <code key={key} className="markdown-preview__inline-code">
+          <code
+            key={key}
+            className="markdown-preview__inline-code"
+            data-source-start={segment.sourceStart}
+            data-source-end={segment.sourceEnd}
+          >
             {segment.value}
           </code>
         );
       case "strong":
-        return <strong key={key}>{renderInlineSegments(segment.value, key)}</strong>;
+        return (
+          <strong key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
+            {renderInlineSegments(segment.value, key)}
+          </strong>
+        );
       case "em":
-        return <em key={key}>{renderInlineSegments(segment.value, key)}</em>;
+        return (
+          <em key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
+            {renderInlineSegments(segment.value, key)}
+          </em>
+        );
       case "strike":
-        return <del key={key}>{renderInlineSegments(segment.value, key)}</del>;
+        return (
+          <del key={key} data-source-start={segment.sourceStart} data-source-end={segment.sourceEnd}>
+            {renderInlineSegments(segment.value, key)}
+          </del>
+        );
       case "link":
         return (
-          <a key={key} className="markdown-preview__link" href={segment.href} target="_blank" rel="noreferrer">
+          <a
+            key={key}
+            className="markdown-preview__link"
+            href={segment.href}
+            target="_blank"
+            rel="noreferrer"
+            data-source-start={segment.sourceStart}
+            data-source-end={segment.sourceEnd}
+          >
             {renderInlineSegments(segment.text, key)}
           </a>
         );
@@ -271,147 +391,185 @@ function renderInlineSegments(segments: InlineSegment[], keyPrefix: string): Rea
 }
 
 function parseMarkdown(content: string): MarkdownBlock[] {
-  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const lines = buildLineTable(content);
   const blocks: MarkdownBlock[] = [];
   let index = 0;
 
   while (index < lines.length) {
     const line = lines[index];
 
-    if (!line.trim()) {
+    if (!line.text.trim()) {
       index += 1;
       continue;
     }
 
-    const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line);
+    const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line.text);
     if (headingMatch) {
       const level = headingMatch[1].length as 1 | 2 | 3 | 4 | 5 | 6;
+      const contentStart = line.start + headingMatch[0].indexOf(headingMatch[2]);
+      const contentEnd = contentStart + headingMatch[2].length;
       blocks.push({
         type: "heading",
         level,
-        content: parseInline(headingMatch[2])
+        content: parseInline(headingMatch[2], contentStart),
+        sourceStart: line.start,
+        sourceEnd: contentEnd
       });
       index += 1;
       continue;
     }
 
-    if (/^```/.test(line)) {
-      const language = line.replace(/^```/, "").trim();
-      const codeLines: string[] = [];
-      index += 1;
+    if (/^```/.test(line.text)) {
+      const language = line.text.replace(/^```/, "").trim();
+      const contentStart = index + 1 < lines.length ? lines[index + 1].start : line.end;
+      let cursor = index + 1;
 
-      while (index < lines.length && !/^```/.test(lines[index])) {
-        codeLines.push(lines[index]);
-        index += 1;
+      while (cursor < lines.length && !/^```/.test(lines[cursor].text)) {
+        cursor += 1;
       }
 
-      if (index < lines.length) {
-        index += 1;
-      }
+      const contentEnd = cursor < lines.length ? lines[cursor].start : contentStart;
 
       blocks.push({
         type: "code",
         language,
-        content: codeLines.join("\n")
+        content: content.slice(contentStart, contentEnd),
+        sourceStart: line.start,
+        sourceEnd: contentEnd
       });
+      index = cursor < lines.length ? cursor + 1 : cursor;
       continue;
     }
 
-    if (/^([-*_])\1\1+$/.test(line.trim())) {
-      blocks.push({ type: "rule" });
+    if (/^([-*_])\1\1+$/.test(line.text.trim())) {
+      blocks.push({ type: "rule", sourceStart: line.start, sourceEnd: line.end });
       index += 1;
       continue;
     }
 
-    const orderedListMatch = /^(\d+)\.\s+(.*)$/.exec(line);
+    const orderedListMatch = /^(\d+)\.\s+(.*)$/.exec(line.text);
     if (orderedListMatch) {
       const items: InlineSegment[][] = [];
+      const listStart = line.start;
+      let lastEnd = line.end;
 
       while (index < lines.length) {
-        const itemMatch = /^(\d+)\.\s+(.*)$/.exec(lines[index]);
+        const itemLine = lines[index];
+        const itemMatch = /^(\d+)\.\s+(.*)$/.exec(itemLine.text);
 
         if (!itemMatch) {
           break;
         }
 
-        items.push(parseInline(itemMatch[2]));
+        const itemContentStart = itemLine.start + itemLine.text.indexOf(itemMatch[2]);
+        const itemContentEnd = itemContentStart + itemMatch[2].length;
+        items.push(parseInline(itemMatch[2], itemContentStart));
+        lastEnd = itemContentEnd;
         index += 1;
       }
 
       blocks.push({
         type: "list",
         ordered: true,
-        items
+        items,
+        sourceStart: listStart,
+        sourceEnd: lastEnd
       });
       continue;
     }
 
-    const unorderedListMatch = /^[-*+]\s+(.*)$/.exec(line);
+    const unorderedListMatch = /^[-*+]\s+(.*)$/.exec(line.text);
     if (unorderedListMatch) {
       const items: InlineSegment[][] = [];
+      const listStart = line.start;
+      let lastEnd = line.end;
 
       while (index < lines.length) {
-        const itemMatch = /^[-*+]\s+(.*)$/.exec(lines[index]);
+        const itemLine = lines[index];
+        const itemMatch = /^[-*+]\s+(.*)$/.exec(itemLine.text);
 
         if (!itemMatch) {
           break;
         }
 
-        items.push(parseInline(itemMatch[1]));
+        const itemContentStart = itemLine.start + itemLine.text.indexOf(itemMatch[1]);
+        const itemContentEnd = itemContentStart + itemMatch[1].length;
+        items.push(parseInline(itemMatch[1], itemContentStart));
+        lastEnd = itemContentEnd;
         index += 1;
       }
 
       blocks.push({
         type: "list",
         ordered: false,
-        items
+        items,
+        sourceStart: listStart,
+        sourceEnd: lastEnd
       });
       continue;
     }
 
-    if (/^>\s?/.test(line)) {
-      const quoteLines: string[] = [];
+    if (/^>\s?/.test(line.text)) {
+      const quoteLines: Array<{ text: string; start: number; end: number }> = [];
+      const blockStart = line.start;
+      let blockEnd = line.end;
 
-      while (index < lines.length && /^>\s?/.test(lines[index])) {
-        quoteLines.push(lines[index].replace(/^>\s?/, ""));
+      while (index < lines.length && /^>\s?/.test(lines[index].text)) {
+        const quoteLine = lines[index];
+        const prefixLength = quoteLine.text.match(/^>\s?/)?.[0].length ?? 1;
+        const visibleText = quoteLine.text.slice(prefixLength);
+        const visibleStart = quoteLine.start + prefixLength;
+        const visibleEnd = visibleStart + visibleText.length;
+        quoteLines.push({ text: visibleText, start: visibleStart, end: visibleEnd });
+        blockEnd = visibleEnd;
         index += 1;
       }
 
       blocks.push({
         type: "blockquote",
-        content: parseInline(quoteLines.join(" "))
+        content: parseLineGroup(quoteLines),
+        sourceStart: blockStart,
+        sourceEnd: blockEnd
       });
       continue;
     }
 
-    const paragraphLines: string[] = [];
+    const paragraphLines: Array<{ text: string; start: number; end: number }> = [];
+    const paragraphStart = line.start;
+    let paragraphEnd = line.end;
 
     while (index < lines.length) {
       const currentLine = lines[index];
 
-      if (!currentLine.trim()) {
+      if (!currentLine.text.trim()) {
         break;
       }
 
       if (
-        /^(#{1,6})\s+/.test(currentLine) ||
-        /^```/.test(currentLine) ||
-        /^([-*_])\1\1+$/.test(currentLine.trim()) ||
-        /^(\d+)\.\s+/.test(currentLine) ||
-        /^[-*+]\s+/.test(currentLine) ||
-        /^>\s?/.test(currentLine)
+        /^(#{1,6})\s+/.test(currentLine.text) ||
+        /^```/.test(currentLine.text) ||
+        /^([-*_])\1\1+$/.test(currentLine.text.trim()) ||
+        /^(\d+)\.\s+/.test(currentLine.text) ||
+        /^[-*+]\s+/.test(currentLine.text) ||
+        /^>\s?/.test(currentLine.text)
       ) {
         break;
       }
 
-      paragraphLines.push(currentLine.trim());
+      const trimmed = currentLine.text.trim();
+      const visibleStart = currentLine.start + currentLine.text.indexOf(trimmed);
+      const visibleEnd = visibleStart + trimmed.length;
+      paragraphLines.push({ text: trimmed, start: visibleStart, end: visibleEnd });
+      paragraphEnd = visibleEnd;
       index += 1;
     }
 
     if (paragraphLines.length > 0) {
       blocks.push({
         type: "paragraph",
-        content: parseInline(paragraphLines.join(" "))
+        content: parseLineGroup(paragraphLines),
+        sourceStart: paragraphStart,
+        sourceEnd: paragraphEnd
       });
       continue;
     }
@@ -422,7 +580,26 @@ function parseMarkdown(content: string): MarkdownBlock[] {
   return blocks;
 }
 
-function parseInline(input: string): InlineSegment[] {
+function parseLineGroup(lines: LineEntry[]): InlineSegment[] {
+  const segments: InlineSegment[] = [];
+
+  lines.forEach((line, index) => {
+    segments.push(...parseInline(line.text, line.start));
+
+    if (index < lines.length - 1) {
+      segments.push({
+        type: "text",
+        value: " ",
+        sourceStart: line.end,
+        sourceEnd: line.end + 1
+      });
+    }
+  });
+
+  return segments;
+}
+
+function parseInline(input: string, sourceStart: number): InlineSegment[] {
   const segments: InlineSegment[] = [];
   let cursor = 0;
 
@@ -432,24 +609,42 @@ function parseInline(input: string): InlineSegment[] {
 
     if (!nextMatch) {
       if (remaining.length > 0) {
-        segments.push({ type: "text", value: remaining });
+        segments.push({
+          type: "text",
+          value: remaining,
+          sourceStart: sourceStart + cursor,
+          sourceEnd: sourceStart + cursor + remaining.length
+        });
       }
       break;
     }
 
     if (nextMatch.index > 0) {
-      segments.push({ type: "text", value: remaining.slice(0, nextMatch.index) });
+      const text = remaining.slice(0, nextMatch.index);
+      segments.push({
+        type: "text",
+        value: text,
+        sourceStart: sourceStart + cursor,
+        sourceEnd: sourceStart + cursor + text.length
+      });
     }
 
-    segments.push(nextMatch.segment);
+    const matchStart = sourceStart + cursor + nextMatch.index;
+    const segment = toInlineSegment(nextMatch.type, nextMatch.match, matchStart);
+
+    if (segment) {
+      segments.push(segment);
+    }
     cursor += nextMatch.index + nextMatch.length;
   }
 
   return segments;
 }
 
-function findNextInlineMatch(input: string): { index: number; length: number; segment: InlineSegment } | null {
-  let bestMatch: { index: number; length: number; segment: InlineSegment } | null = null;
+function findNextInlineMatch(
+  input: string
+): { index: number; length: number; type: InlineSegment["type"]; match: RegExpExecArray } | null {
+  let bestMatch: { index: number; length: number; type: InlineSegment["type"]; match: RegExpExecArray } | null = null;
 
   for (const pattern of INLINE_PATTERNS) {
     const match = pattern.regex.exec(input);
@@ -458,17 +653,12 @@ function findNextInlineMatch(input: string): { index: number; length: number; se
       continue;
     }
 
-    const candidate = toInlineSegment(pattern.type, match);
-
-    if (!candidate) {
-      continue;
-    }
-
     if (!bestMatch || match.index < bestMatch.index) {
       bestMatch = {
         index: match.index,
         length: match[0].length,
-        segment: candidate
+        type: pattern.type,
+        match
       };
     }
   }
@@ -476,7 +666,7 @@ function findNextInlineMatch(input: string): { index: number; length: number; se
   return bestMatch;
 }
 
-function toInlineSegment(type: InlineSegment["type"], match: RegExpExecArray): InlineSegment | null {
+function toInlineSegment(type: InlineSegment["type"], match: RegExpExecArray, matchStart: number): InlineSegment | null {
   switch (type) {
     case "link": {
       const text = match[1];
@@ -491,33 +681,58 @@ function toInlineSegment(type: InlineSegment["type"], match: RegExpExecArray): I
 
       return {
         type: "link",
-        text: parseInline(text),
-        href
+        text: parseInline(text, matchStart + 1),
+        href,
+        sourceStart: matchStart,
+        sourceEnd: matchStart + match[0].length
       };
     }
     case "code":
       return {
         type: "code",
-        value: match[1]
+        value: match[1],
+        sourceStart: matchStart + 1,
+        sourceEnd: matchStart + 1 + match[1].length
       };
     case "strong":
       return {
         type: "strong",
-        value: parseInline(match[2])
+        value: parseInline(match[2], matchStart + match[1].length),
+        sourceStart: matchStart,
+        sourceEnd: matchStart + match[0].length
       };
     case "em":
       return {
         type: "em",
-        value: parseInline(match[2])
+        value: parseInline(match[2], matchStart + match[1].length),
+        sourceStart: matchStart,
+        sourceEnd: matchStart + match[0].length
       };
     case "strike":
       return {
         type: "strike",
-        value: parseInline(match[1])
+        value: parseInline(match[1], matchStart + 2),
+        sourceStart: matchStart,
+        sourceEnd: matchStart + match[0].length
       };
     default:
       return null;
   }
+}
+
+function buildLineTable(content: string): LineEntry[] {
+  const lines = content.split("\n");
+  const entries: LineEntry[] = [];
+  let cursor = 0;
+
+  for (const line of lines) {
+    const start = cursor;
+    const end = start + line.length;
+    entries.push({ text: line, start, end });
+    cursor = end + 1;
+  }
+
+  return entries;
 }
 
 function safeHref(href: string): string | null {

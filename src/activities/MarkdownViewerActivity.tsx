@@ -351,7 +351,14 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
             </ActivityToolbar>
 
             {activeDocument ? (
-              <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
+              <div className="markdown-viewer__workspace">
+                <div className="markdown-viewer__preview-pane">
+                  <MarkdownPreview label={activeDocument.name} content={activeDocument.content} />
+                </div>
+                <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
+                  <div className="markdown-viewer__highlights-empty" />
+                </aside>
+              </div>
             ) : (
               <div className="markdown-viewer-empty-state" aria-label="No file open">
                 <p className="markdown-viewer-empty-state__message">
