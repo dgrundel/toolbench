@@ -623,6 +623,12 @@ button:focus-visible {
   border-bottom-color: currentColor;
 }
 
+.markdown-preview__image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .markdown-preview__highlight {
   background: rgba(255, 220, 120, 0.65);
   color: inherit;
@@ -667,6 +673,30 @@ button:focus-visible {
 
 .markdown-preview__code code {
   font: inherit;
+}
+
+.markdown-preview__table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  color: #303743;
+}
+
+.markdown-preview__table th,
+.markdown-preview__table td {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+
+.markdown-preview__table th {
+  background: #f6f9fc;
+  font-weight: 700;
+}
+
+.markdown-preview__task-checkbox {
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }
 
 .markdown-preview__rule {
