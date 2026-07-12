@@ -3,6 +3,7 @@ import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
+import { Modal } from "../ui/workspace/Modal";
 import {
   MarkdownPreview,
   markdownToClipboardHtml,
@@ -34,6 +35,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const [highlightMode, setHighlightMode] = useState(false);
   const [highlightsByDocumentId, setHighlightsByDocumentId] = useState<Record<string, PageHighlight[]>>({});
+  const [highlightDeleteTarget, setHighlightDeleteTarget] = useState<PageHighlight | null>(null);
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
@@ -303,6 +305,19 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     });
   }
 
+  function requestDeleteHighlight(highlight: PageHighlight) {
+    setHighlightDeleteTarget(highlight);
+  }
+
+  function confirmDeleteHighlight() {
+    if (!highlightDeleteTarget) {
+      return;
+    }
+
+    handleDeleteHighlight(highlightDeleteTarget.id);
+    setHighlightDeleteTarget(null);
+  }
+
   function scrollToHighlight(highlight: PageHighlight) {
     const previewPane = previewPaneRef.current;
 
@@ -473,7 +488,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                                 type="button"
                                 className="markdown-viewer-highlights__delete"
                                 aria-label={`Delete highlight: ${highlight.excerpt}`}
-                                onClick={() => handleDeleteHighlight(highlight.id)}
+                                onClick={() => requestDeleteHighlight(highlight)}
                               >
                                 <WorkspaceIcon
                                   name="delete"
@@ -501,6 +516,26 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
           </div>
         </section>
       </main>
+      <Modal
+        open={highlightDeleteTarget !== null}
+        title="Remove Highlight"
+        onClose={() => setHighlightDeleteTarget(null)}
+        actions={
+          <>
+            <button type="button" className="modal__button modal__button--secondary" onClick={() => setHighlightDeleteTarget(null)}>
+              Cancel
+            </button>
+            <button type="button" className="modal__button modal__button--destructive" onClick={confirmDeleteHighlight}>
+              Remove
+            </button>
+          </>
+        }
+      >
+        <p className="modal__text">Are you sure you want to remove this highlight?</p>
+        <p className="modal__text modal__text--muted">
+          This will delete the highlight from the current page only.
+        </p>
+      </Modal>
     </>
   );
 }
