@@ -8,6 +8,8 @@ import {
   IconFileText,
   IconFolder,
   IconLayoutGrid,
+  IconHighlight,
+  IconHighlightOff,
   IconMarkdown,
   IconSquare2,
   IconTrash,
@@ -28,6 +30,8 @@ type WorkspaceIconName =
   | "folder"
   | "delete"
   | "copy"
+  | "highlight"
+  | "highlight-off"
   | "close";
 
 type WorkspaceIconProps = {
@@ -50,6 +54,8 @@ const iconMap = {
   folder: IconFolder,
   delete: IconTrash,
   copy: IconCopy,
+  highlight: IconHighlight,
+  "highlight-off": IconHighlightOff,
   close: IconX
 } as const;
 

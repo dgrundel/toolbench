@@ -24,6 +24,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
+  const [highlightMode, setHighlightMode] = useState(false);
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
   const activeDocumentIdRef = useRef<string | null>(null);
@@ -330,6 +331,21 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         <section className="editor-panel editor-panel--compact">
           <div className="markdown-viewer__panel-body">
             <ActivityToolbar label="Markdown tools">
+              <button
+                type="button"
+                className={`editor-panel__toolbar-button ${
+                  highlightMode ? "editor-panel__toolbar-button--active" : ""
+                }`}
+                aria-pressed={highlightMode}
+                onClick={() => setHighlightMode((current) => !current)}
+              >
+                <WorkspaceIcon
+                  name={highlightMode ? "highlight" : "highlight-off"}
+                  size={14}
+                  className="editor-panel__toolbar-button-icon"
+                />
+                {highlightMode ? "Highlight Mode On" : "Highlight Mode"}
+              </button>
               <button
                 type="button"
                 className="editor-panel__toolbar-button"
