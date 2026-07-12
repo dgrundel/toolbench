@@ -814,12 +814,43 @@ button:focus-visible {
   border-radius: 3px;
 }
 
+.markdown-viewer-highlights__comment-display-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .markdown-viewer-highlights__comment-display-label {
   color: #6b7280;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.markdown-viewer-highlights__comment-delete {
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8a909b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.markdown-viewer-highlights__comment-delete:hover,
+.markdown-viewer-highlights__comment-delete:focus-visible {
+  border-color: rgba(190, 54, 54, 0.18);
+  background: rgba(190, 54, 54, 0.08);
+  color: #a72f2f;
+}
+
+.markdown-viewer-highlights__comment-delete-icon {
+  pointer-events: none;
 }
 
 .markdown-viewer-highlights__comment-display-body {

@@ -37,6 +37,11 @@ type CommentComposerTarget = {
   highlightId: string;
 } | null;
 
+type CommentDeleteTarget = {
+  documentId: string;
+  highlight: PageHighlight;
+} | null;
+
 export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
   const [storedDocuments, setStoredDocuments] = useState<MarkdownLibrarySummary[]>([]);
   const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
@@ -46,6 +51,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [highlightMode, setHighlightMode] = useState(false);
   const [highlightDeleteTarget, setHighlightDeleteTarget] = useState<HighlightDeleteTarget | null>(null);
   const [commentComposerTarget, setCommentComposerTarget] = useState<CommentComposerTarget>(null);
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<CommentDeleteTarget>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
@@ -380,6 +386,17 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     setCommentDraft("");
   }
 
+  function requestDeleteComment(highlight: PageHighlight) {
+    if (!activeDocument) {
+      return;
+    }
+
+    setCommentDeleteTarget({
+      documentId: activeDocument.id,
+      highlight
+    });
+  }
+
   function getHighlightComment(highlight: PageHighlight): string | null {
     return typeof highlight.comment === "string" && highlight.comment.trim().length > 0 ? highlight.comment : null;
   }
@@ -414,6 +431,46 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     } catch (error) {
       console.error(`Failed to save comment for ${activeDocument.name}.`, error);
     }
+  }
+
+  function confirmDeleteComment() {
+    if (!activeDocument || !commentDeleteTarget) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextHighlights = activeDocument.highlights.map((highlight) =>
+      highlight.id === commentDeleteTarget.highlight.id
+        ? {
+            ...highlight,
+            comment: null,
+            updatedAt: now
+          }
+        : highlight
+    );
+
+    setOpenDocuments((currentOpenDocuments) =>
+      currentOpenDocuments.map((document) =>
+        document.id === activeDocument.id ? { ...document, highlights: nextHighlights } : document
+      )
+    );
+
+    if (
+      commentComposerTarget?.documentId === activeDocument.id &&
+      commentComposerTarget.highlightId === commentDeleteTarget.highlight.id
+    ) {
+      closeCommentComposer();
+    }
+
+    void updateMarkdownDocumentHighlights(activeDocument.id, nextHighlights)
+      .catch((error) => {
+        console.error(`Failed to delete comment for ${activeDocument.name}.`, error);
+      })
+      .finally(() => {
+        onStorageChange?.();
+      });
+
+    setCommentDeleteTarget(null);
   }
 
   function confirmDeleteHighlight() {
@@ -606,7 +663,21 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                               </div>
                             ) : getHighlightComment(highlight) ? (
                               <div className="markdown-viewer-highlights__comment-display">
-                                <div className="markdown-viewer-highlights__comment-display-label">Comment</div>
+                                <div className="markdown-viewer-highlights__comment-display-header">
+                                  <div className="markdown-viewer-highlights__comment-display-label">Comment</div>
+                                  <button
+                                    type="button"
+                                    className="markdown-viewer-highlights__comment-delete"
+                                    aria-label={`Delete comment: ${highlight.excerpt}`}
+                                    onClick={() => requestDeleteComment(highlight)}
+                                  >
+                                    <WorkspaceIcon
+                                      name="delete"
+                                      size={14}
+                                      className="markdown-viewer-highlights__comment-delete-icon"
+                                    />
+                                  </button>
+                                </div>
                                 <div className="markdown-viewer-highlights__comment-display-body">
                                   {getHighlightComment(highlight)}
                                 </div>
@@ -694,6 +765,26 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         <p className="modal__text">Are you sure you want to remove this highlight?</p>
         <p className="modal__text modal__text--muted">
           This will delete the highlight from the current page only.
+        </p>
+      </Modal>
+      <Modal
+        open={commentDeleteTarget !== null}
+        title="Remove Comment"
+        onClose={() => setCommentDeleteTarget(null)}
+        actions={
+          <>
+            <button type="button" className="modal__button modal__button--secondary" onClick={() => setCommentDeleteTarget(null)}>
+              Cancel
+            </button>
+            <button type="button" className="modal__button modal__button--destructive" onClick={confirmDeleteComment}>
+              Remove
+            </button>
+          </>
+        }
+      >
+        <p className="modal__text">Are you sure you want to remove this comment?</p>
+        <p className="modal__text modal__text--muted">
+          This will clear the comment from the highlight but keep the highlight itself.
         </p>
       </Modal>
     </>
