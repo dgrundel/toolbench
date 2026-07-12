@@ -434,20 +434,21 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                     <div className="markdown-viewer-highlights__body">
                       {activeHighlights.length > 0 ? (
                         activeHighlights.map((highlight, index) => (
-                          <button
-                            key={highlight.id}
-                            type="button"
-                            className="markdown-viewer-highlights__item"
-                            onClick={() => scrollToHighlight(highlight)}
-                          >
+                          <div key={highlight.id} className="markdown-viewer-highlights__item">
                             <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
                             <span className="markdown-viewer-highlights__copy">
                               <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
-                              <span className="markdown-viewer-highlights__meta">
-                                <span>{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
-                              </span>
+                              <span className="markdown-viewer-highlights__meta">{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
                             </span>
-                          </button>
+                            <button
+                              type="button"
+                              className="markdown-viewer-highlights__jump"
+                              aria-label={`Jump to highlight: ${highlight.excerpt}`}
+                              onClick={() => scrollToHighlight(highlight)}
+                            >
+                              <WorkspaceIcon name="bookmark" size={14} className="markdown-viewer-highlights__jump-icon" />
+                            </button>
+                          </div>
                         ))
                       ) : (
                         <div className="markdown-viewer-highlights__empty">No highlights yet.</div>
