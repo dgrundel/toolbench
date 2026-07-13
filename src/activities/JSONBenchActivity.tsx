@@ -1,18 +1,7 @@
-import { ActivityBreadcrumbs } from "../ui/workspace/ActivityBreadcrumbs";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
-import { ActivityInspectorCard } from "../ui/workspace/ActivityInspectorCard";
-import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
-import { ActivityTree } from "../ui/workspace/ActivityTree";
 
-const files = [
-  { name: "app.tsx", kind: "tsx", active: true },
-  { name: "theme.css", kind: "css" },
-  { name: "README.md", kind: "md" },
-  { name: "data.json", kind: "json" }
-];
-
-const editorLines = [
+const jsonSource = [
   "{",
   '  "name": "JSON Bench",',
   '  "version": 1,',
@@ -26,45 +15,50 @@ const editorLines = [
   '    { "id": 2, "label": "Scratch" }',
   "  ]",
   "}"
-];
+].join("\n");
 
-const explorerItems = [
-  { name: "src", type: "folder", open: true },
-  { name: "components", type: "folder" },
-  { name: "styles", type: "folder" },
-  { name: "app.tsx", type: "file", active: true },
-  { name: "theme.css", type: "file" },
-  { name: "index.tsx", type: "file" }
-];
+const jsonTabs = [{ name: "input.json", kind: "json", active: true }];
 
-const editorValue = editorLines.join("\n");
+const javascriptSource = [
+  "const settings = {",
+  '  theme: "vscode-light",',
+  "  wrap: false,",
+  "  lint: true",
+  "};",
+  "",
+  "export function createBenchState() {",
+  "  return {",
+  "    ready: true,",
+  "    documents: []",
+  "  };",
+  "}"
+].join("\n");
+
+const javascriptTabs = [{ name: "transform.js", kind: "js", active: true }];
 
 export function JSONBenchActivity() {
   return (
-    <>
-      <ActivitySidebar title="JSON BENCH">
-        <ActivityTree items={explorerItems} header="PROJECT" count={4} />
-      </ActivitySidebar>
+    <main className="json-bench-workspace">
+      <section className="json-bench-workspace__top">
+        <div className="json-bench-workspace__panel json-bench-workspace__panel--left">
+          <ActivityTabs files={jsonTabs} />
+          <ActivityEditor label="JSON bench JSON editor" initialValue={jsonSource} mode="json" />
+        </div>
 
-      <main className="editor-shell">
-        <ActivityTabs files={files} />
-
-        <section className="editor-panel">
-          <ActivityBreadcrumbs crumbs={["src", "/", "app.tsx", "/", "Workspace"]} />
+        <div className="json-bench-workspace__panel json-bench-workspace__panel--right">
+          <ActivityTabs files={javascriptTabs} />
           <ActivityEditor
-            label="JSON bench editor"
-            initialValue={editorValue}
-            mode="json"
-            inspector={
-              <ActivityInspectorCard
-                eyebrow="JSON bench"
-                title="Neutral panels, blue emphasis, square geometry."
-                body="This activity starts as a copy of the Demo shell so it can become a JSON-focused workspace without reworking the surrounding layout."
-              />
-            }
+            label="JSON bench JavaScript editor"
+            initialValue={javascriptSource}
+            mode="javascript"
           />
-        </section>
-      </main>
-    </>
+        </div>
+      </section>
+
+      <section className="json-bench-workspace__panel json-bench-workspace__panel--bottom" aria-label="Bottom panel">
+        <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} />
+        <div className="json-bench-workspace__bottom" />
+      </section>
+    </main>
   );
 }

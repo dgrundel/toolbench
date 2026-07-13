@@ -475,6 +475,7 @@ button:focus-visible {
 }
 
 .file-chip--tsx { background: #d5ecfb; color: #2676b9; }
+.file-chip--js { background: #f1e6fb; color: #7a4bb1; }
 .file-chip--css { background: #e6ecfb; color: #5268b1; }
 .file-chip--md { background: #e9ecef; color: #60656f; }
 .file-chip--json { background: #e6f3ef; color: #4a8e7d; }
@@ -488,6 +489,46 @@ button:focus-visible {
 
 .editor-panel--compact {
   grid-template-rows: minmax(0, 1fr);
+}
+
+.json-bench-workspace {
+  grid-column: 2 / -1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  background: #f7f8fa;
+}
+
+.json-bench-workspace__top {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.json-bench-workspace__panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-bench-workspace__panel--left {
+  border-right: 1px solid var(--line);
+}
+
+.json-bench-workspace__panel--bottom {
+  border-top: 1px solid var(--line);
+}
+
+.json-bench-workspace__bottom {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: #eef1f5;
 }
 
 .markdown-viewer-empty-state {

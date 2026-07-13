@@ -5,6 +5,7 @@ import {
   IconFileCode,
   IconFileTypeCss,
   IconFileTypeHtml,
+  IconFileTypeJs,
   IconFileTypeTsx,
   IconFileText,
   IconFolder,
@@ -24,6 +25,7 @@ type WorkspaceIconName =
   | "home"
   | "more-actions"
   | "file-tsx"
+  | "file-js"
   | "file-css"
   | "file-html"
   | "file-md"
@@ -50,6 +52,7 @@ const iconMap = {
   home: IconLayoutGrid,
   "more-actions": IconDotsVertical,
   "file-tsx": IconFileTypeTsx,
+  "file-js": IconFileTypeJs,
   "file-css": IconFileTypeCss,
   "file-html": IconFileTypeHtml,
   "file-md": IconMarkdown,

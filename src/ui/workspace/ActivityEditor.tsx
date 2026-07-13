@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
+import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 
 type ActivityEditorProps = {
   label: string;
   initialValue: string;
-  mode?: "plain" | "json";
+  mode?: "plain" | "json" | "javascript";
   onChange?: (value: string) => void;
   inspector?: ReactNode;
 };
@@ -26,7 +27,15 @@ export function ActivityEditor({
   }, [initialValue]);
 
   const extensions = useMemo(() => {
-    return mode === "json" ? [json()] : [];
+    if (mode === "json") {
+      return [json()];
+    }
+
+    if (mode === "javascript") {
+      return [javascript({ jsx: true })];
+    }
+
+    return [];
   }, [mode]);
 
   const handleChange = (nextValue: string) => {

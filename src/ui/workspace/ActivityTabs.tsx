@@ -49,6 +49,8 @@ function fileKindIconName(kind: WorkspaceFileItem["kind"]) {
   switch (kind) {
     case "tsx":
       return "file-tsx";
+    case "js":
+      return "file-js";
     case "css":
       return "file-css";
     case "md":

@@ -1,7 +1,7 @@
 export type WorkspaceFileItem = {
   id?: string;
   name: string;
-  kind: "tsx" | "css" | "md" | "json";
+  kind: "tsx" | "js" | "css" | "md" | "json";
   active?: boolean;
 };
 
