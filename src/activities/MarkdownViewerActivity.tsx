@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
@@ -20,6 +21,9 @@ import {
   type MarkdownLibraryDocument,
   type MarkdownLibrarySummary
 } from "../storage/markdownLibrary";
+import {
+  getMarkdownViewerFileId
+} from "../routing/workspaceRoutes";
 
 type MarkdownViewerActivityProps = {
   onStorageChange?: () => void;
@@ -42,10 +46,11 @@ type CommentDeleteTarget = {
   highlight: PageHighlight;
 } | null;
 
+type OpenDocumentResult = "opened" | "missing" | "cancelled" | "error";
+
 export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivityProps) {
   const [storedDocuments, setStoredDocuments] = useState<MarkdownLibrarySummary[]>([]);
   const [openDocuments, setOpenDocuments] = useState<MarkdownLibraryDocument[]>([]);
-  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<"sidebar" | "editor" | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "markdown" | "rendered">("idle");
   const [highlightMode, setHighlightMode] = useState(false);
@@ -53,15 +58,13 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [commentComposerTarget, setCommentComposerTarget] = useState<CommentComposerTarget>(null);
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<CommentDeleteTarget>(null);
   const [commentDraft, setCommentDraft] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
-  const activeDocumentIdRef = useRef<string | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
   const previewPaneRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    activeDocumentIdRef.current = activeDocumentId;
-  }, [activeDocumentId]);
+  const selectedDocumentId = getMarkdownViewerFileId(searchParams.toString());
 
   useEffect(() => {
     let cancelled = false;
@@ -86,18 +89,51 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     };
   }, []);
 
-  const activeDocument = openDocuments.find((document) => document.id === activeDocumentId) ?? openDocuments[0] ?? null;
+  useEffect(() => {
+    setHighlightDeleteTarget(null);
+    setCommentComposerTarget(null);
+    setCommentDeleteTarget(null);
+    setCommentDraft("");
+  }, [selectedDocumentId]);
+
+  useEffect(() => {
+    if (!selectedDocumentId) {
+      return;
+    }
+
+    if (openDocuments.some((document) => document.id === selectedDocumentId)) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void openDocument(selectedDocumentId, { syncUrl: false }).then((result) => {
+      if (cancelled || result !== "missing") {
+        return;
+      }
+
+      setSelectedDocumentId(null, { replace: true });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openDocuments, selectedDocumentId]);
+
+  const activeDocument = selectedDocumentId
+    ? openDocuments.find((document) => document.id === selectedDocumentId) ?? null
+    : null;
   const files = openDocuments.map((document) => ({
     id: document.id,
     name: document.name,
     kind: "md" as const,
-    active: document.id === activeDocumentId
+    active: document.id === selectedDocumentId
   }));
   const explorerItems = storedDocuments.map((document) => ({
     id: document.id,
     name: document.name,
     type: "file" as const,
-    active: document.id === activeDocument?.id
+    active: document.id === selectedDocumentId
   }));
   const activeHighlights = activeDocument?.highlights ?? [];
   const showHighlightsPane = activeHighlights.length > 0;
@@ -105,18 +141,34 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     activeDocument && commentComposerTarget?.documentId === activeDocument.id
       ? activeHighlights.find((highlight) => highlight.id === commentComposerTarget.highlightId) ?? null
       : null;
+
+  function setSelectedDocumentId(documentId: string | null, options?: { replace?: boolean }) {
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (documentId) {
+      nextSearchParams.set("file", documentId);
+    } else {
+      nextSearchParams.delete("file");
+    }
+
+    setSearchParams(nextSearchParams, { replace: options?.replace ?? false });
+  }
+
   async function refreshStoredDocuments() {
     const records = await listMarkdownDocuments();
     setStoredDocuments(records);
   }
 
-  async function openDocument(documentId: string) {
+  async function openDocument(documentId: string, options?: { syncUrl?: boolean }): Promise<OpenDocumentResult> {
     try {
       const alreadyOpen = openDocuments.find((document) => document.id === documentId);
 
       if (alreadyOpen) {
-        setActiveDocumentId(documentId);
-        return;
+        if (options?.syncUrl !== false) {
+          setSelectedDocumentId(documentId);
+        }
+
+        return "opened";
       }
 
       const requestId = ++openRequestIdRef.current;
@@ -128,7 +180,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         requestId !== openRequestIdRef.current ||
         openRequestDocumentIdRef.current !== documentId
       ) {
-        return;
+        return loadedDocument ? "cancelled" : "missing";
       }
 
       setOpenDocuments((currentOpenDocuments) =>
@@ -137,9 +189,15 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
           : [...currentOpenDocuments, loadedDocument]
       );
       openRequestDocumentIdRef.current = null;
-      setActiveDocumentId(loadedDocument.id);
+
+      if (options?.syncUrl !== false) {
+        setSelectedDocumentId(loadedDocument.id);
+      }
+
+      return "opened";
     } catch (error) {
       console.error(`Failed to open markdown document ${documentId}.`, error);
+      return "error";
     }
   }
 
@@ -153,9 +211,9 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
       const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
 
-      if (activeDocumentId === documentId) {
+      if (selectedDocumentId === documentId) {
         const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
-        setActiveDocumentId(nextActiveDocument?.id ?? null);
+        setSelectedDocumentId(nextActiveDocument?.id ?? null);
       }
 
       return nextOpenDocuments;
@@ -180,9 +238,9 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
         const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
 
-        if (activeDocumentIdRef.current === documentId) {
+        if (selectedDocumentId === documentId) {
           const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
-          setActiveDocumentId(nextActiveDocument?.id ?? null);
+          setSelectedDocumentId(nextActiveDocument?.id ?? null);
         }
 
         return nextOpenDocuments;
@@ -226,7 +284,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
       await refreshStoredDocuments();
       setOpenDocuments((currentOpenDocuments) => [...currentOpenDocuments, ...importedDocuments]);
-      setActiveDocumentId(importedDocuments[importedDocuments.length - 1].id);
+      setSelectedDocumentId(importedDocuments[importedDocuments.length - 1].id);
     } catch (error) {
       console.error("Failed to import markdown documents.", error);
     } finally {

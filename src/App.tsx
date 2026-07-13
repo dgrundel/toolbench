@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
+import {
+  HashRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate
+} from "react-router-dom";
 import { DemoActivity } from "./activities/DemoActivity";
 import { MarkdownViewerActivity } from "./activities/MarkdownViewerActivity";
 import { WorkspaceIcon, type WorkspaceIconName } from "./ui/workspace/WorkspaceIcon";
 import { WorkspaceHomeLauncher, type WorkspaceHomeLaunchItem } from "./ui/workspace/WorkspaceHomeLauncher";
+import { getWorkspaceActivityId, getWorkspaceActivityPath, type WorkspaceActivityId } from "./routing/workspaceRoutes";
 
 type StorageEstimate = {
   usage: number;
@@ -13,10 +22,8 @@ type ActivityProps = {
   onStorageChange?: () => void;
 };
 
-type ActivityId = "markdown-viewer" | "demo";
-
 const activities: Array<{
-  id: ActivityId;
+  id: Exclude<WorkspaceActivityId, "home">;
   label: string;
   icon: WorkspaceIconName;
   render: (props: ActivityProps) => JSX.Element;
@@ -77,12 +84,24 @@ function useStorageQuota() {
 }
 
 export default function App() {
-  const { quota, refresh } = useStorageQuota();
-  const [activeView, setActiveView] = useState<"home" | ActivityId>("home");
-  const percentUsed =
-    quota && quota.quota > 0 ? Math.min((quota.usage / quota.quota) * 100, 100) : 0;
+  return (
+    <HashRouter>
+      <WorkspaceShell />
+    </HashRouter>
+  );
+}
 
+function WorkspaceShell() {
+  const { quota, refresh } = useStorageQuota();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeView = getWorkspaceActivityId(location.pathname);
   const activeActivity = activities.find((activity) => activity.id === activeView) ?? null;
+  const percentUsed = quota && quota.quota > 0 ? Math.min((quota.usage / quota.quota) * 100, 100) : 0;
+
+  function openActivity(activityId: Exclude<WorkspaceActivityId, "home">) {
+    navigate(getWorkspaceActivityPath(activityId));
+  }
 
   return (
     <div className="vscode-shell">
@@ -94,7 +113,7 @@ export default function App() {
             type="button"
             aria-label={activity.label}
             aria-pressed={activity.id === activeActivity?.id}
-            onClick={() => setActiveView(activity.id)}
+            onClick={() => openActivity(activity.id)}
           >
             <WorkspaceIcon name={activity.icon} />
             <span className="activity-bar__tooltip" role="tooltip">
@@ -104,11 +123,15 @@ export default function App() {
         ))}
       </aside>
 
-      {activeView === "home" ? (
-        <WorkspaceHomeLauncher items={homeLaunchItems} onSelect={(id) => setActiveView(id as ActivityId)} />
-      ) : (
-        activeActivity?.render({ onStorageChange: refresh }) ?? null
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={<WorkspaceHomeLauncher items={homeLaunchItems} onSelect={(id) => openActivity(id as Exclude<WorkspaceActivityId, "home">)} />}
+        />
+        <Route path="/demo" element={<DemoActivity />} />
+        <Route path="/markdown-viewer" element={<MarkdownViewerActivity onStorageChange={refresh} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       <footer className="status-bar" aria-label="Status bar">
         <div className="status-quota">
