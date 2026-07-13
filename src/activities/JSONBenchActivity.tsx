@@ -1,5 +1,7 @@
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
+import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
+import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 
 const jsonSource = [
   "{",
@@ -36,6 +38,21 @@ const javascriptSource = [
 
 const javascriptTabs = [{ name: "transform.js", kind: "js", active: true }];
 
+const outputJson = [
+  "{",
+  '  "name": "JSON Bench",',
+  '  "status": "ready",',
+  '  "items": [',
+  '    { "id": 1, "label": "Example" },',
+  '    { "id": 2, "label": "Scratch" }',
+  "  ]",
+  "}"
+].join("\n");
+
+async function copyOutputJson() {
+  await navigator.clipboard.writeText(outputJson);
+}
+
 export function JSONBenchActivity() {
   return (
     <main className="json-bench-workspace">
@@ -57,7 +74,19 @@ export function JSONBenchActivity() {
 
       <section className="json-bench-workspace__panel json-bench-workspace__panel--bottom" aria-label="Bottom panel">
         <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} />
-        <div className="json-bench-workspace__bottom" />
+        <ActivityToolbar label="Output actions">
+          <button
+            className="editor-panel__toolbar-button"
+            type="button"
+            onClick={() => {
+              void copyOutputJson();
+            }}
+          >
+            <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
+            Copy JSON
+          </button>
+        </ActivityToolbar>
+        <div className="json-bench-workspace__bottom" aria-label="JSON output preview" />
       </section>
     </main>
   );
