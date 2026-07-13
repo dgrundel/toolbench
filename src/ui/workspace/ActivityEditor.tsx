@@ -8,6 +8,7 @@ import { json } from "@codemirror/lang-json";
 type ActivityEditorProps = {
   label: string;
   initialValue: string;
+  value?: string;
   mode?: "plain" | "json" | "javascript";
   onChange?: (value: string) => void;
   inspector?: ReactNode;
@@ -16,15 +17,20 @@ type ActivityEditorProps = {
 export function ActivityEditor({
   label,
   initialValue,
+  value,
   mode = "plain",
   onChange,
   inspector
 }: ActivityEditorProps) {
-  const [value, setValue] = useState(initialValue);
+  const [internalValue, setInternalValue] = useState(initialValue);
 
   useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
+    if (value === undefined) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, value]);
+
+  const editorValue = value ?? internalValue;
 
   const extensions = useMemo(() => {
     if (mode === "json") {
@@ -39,7 +45,9 @@ export function ActivityEditor({
   }, [mode]);
 
   const handleChange = (nextValue: string) => {
-    setValue(nextValue);
+    if (value === undefined) {
+      setInternalValue(nextValue);
+    }
     onChange?.(nextValue);
   };
 
@@ -48,7 +56,7 @@ export function ActivityEditor({
       <div className="editor__content">
         <div className="editor__surface">
           <CodeMirror
-            value={value}
+            value={editorValue}
             height="100%"
             basicSetup
             theme={vscodeLight}

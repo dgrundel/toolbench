@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
-import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
+import { runJsonBenchTransform } from "./jsonBenchRuntime";
 
 const jsonSource = [
   "{",
@@ -22,44 +23,33 @@ const jsonSource = [
 const jsonTabs = [{ name: "input.json", kind: "json", active: true }];
 
 const javascriptSource = [
-  "const settings = {",
-  '  theme: "vscode-light",',
-  "  wrap: false,",
-  "  lint: true",
-  "};",
-  "",
-  "export function createBenchState() {",
-  "  return {",
-  "    ready: true,",
-  "    documents: []",
-  "  };",
+  "export default function transform(input) {",
+  "  return input;",
   "}"
 ].join("\n");
 
 const javascriptTabs = [{ name: "transform.js", kind: "js", active: true }];
 
-const outputJson = [
-  "{",
-  '  "name": "JSON Bench",',
-  '  "status": "ready",',
-  '  "items": [',
-  '    { "id": 1, "label": "Example" },',
-  '    { "id": 2, "label": "Scratch" }',
-  "  ]",
-  "}"
-].join("\n");
-
-async function copyOutputJson() {
-  await navigator.clipboard.writeText(outputJson);
-}
-
 export function JSONBenchActivity() {
+  const [inputJson, setInputJson] = useState(jsonSource);
+  const [transformSource, setTransformSource] = useState(javascriptSource);
+
+  function handleRun() {
+    void runJsonBenchTransform(transformSource, inputJson);
+  }
+
   return (
     <main className="json-bench-workspace">
       <section className="json-bench-workspace__top">
         <div className="json-bench-workspace__panel json-bench-workspace__panel--left">
           <ActivityTabs files={jsonTabs} />
-          <ActivityEditor label="JSON bench JSON editor" initialValue={jsonSource} mode="json" />
+          <ActivityEditor
+            label="JSON bench JSON editor"
+            initialValue={jsonSource}
+            value={inputJson}
+            mode="json"
+            onChange={setInputJson}
+          />
         </div>
 
         <div className="json-bench-workspace__panel json-bench-workspace__panel--right">
@@ -67,6 +57,8 @@ export function JSONBenchActivity() {
           <ActivityEditor
             label="JSON bench JavaScript editor"
             initialValue={javascriptSource}
+            value={transformSource}
+            onChange={setTransformSource}
             mode="javascript"
           />
         </div>
@@ -78,12 +70,9 @@ export function JSONBenchActivity() {
           <button
             className="editor-panel__toolbar-button"
             type="button"
-            onClick={() => {
-              void copyOutputJson();
-            }}
+            onClick={handleRun}
           >
-            <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
-            Copy JSON
+            Run
           </button>
         </ActivityToolbar>
         <div className="json-bench-workspace__bottom" aria-label="JSON output preview" />
