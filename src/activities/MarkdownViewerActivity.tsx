@@ -100,6 +100,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     active: document.id === activeDocument?.id
   }));
   const activeHighlights = activeDocument?.highlights ?? [];
+  const showHighlightsPane = activeHighlights.length > 0;
   const openCommentHighlight =
     activeDocument && commentComposerTarget?.documentId === activeDocument.id
       ? activeHighlights.find((highlight) => highlight.id === commentComposerTarget.highlightId) ?? null
@@ -610,7 +611,11 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
             </ActivityToolbar>
 
             {activeDocument ? (
-              <div className="markdown-viewer__workspace">
+              <div
+                className={`markdown-viewer__workspace ${
+                  showHighlightsPane ? "markdown-viewer__workspace--with-highlights" : ""
+                }`}
+              >
                 <div className="markdown-viewer__preview-pane" ref={previewPaneRef}>
                   <MarkdownPreview
                     label={activeDocument.name}
@@ -620,15 +625,15 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                     onCreateHighlight={handleCreateHighlight}
                   />
                 </div>
-                <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
-                  <div className="markdown-viewer-highlights">
-                    <div className="markdown-viewer-highlights__header">
-                      <span>HIGHLIGHTS</span>
-                      <span className="markdown-viewer-highlights__count">{activeHighlights.length}</span>
-                    </div>
-                    <div className="markdown-viewer-highlights__body">
-                      {activeHighlights.length > 0 ? (
-                        activeHighlights.map((highlight, index) => (
+                {showHighlightsPane ? (
+                  <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
+                    <div className="markdown-viewer-highlights">
+                      <div className="markdown-viewer-highlights__header">
+                        <span>HIGHLIGHTS</span>
+                        <span className="markdown-viewer-highlights__count">{activeHighlights.length}</span>
+                      </div>
+                      <div className="markdown-viewer-highlights__body">
+                        {activeHighlights.map((highlight, index) => (
                           <div key={highlight.id} className="markdown-viewer-highlights__item">
                             <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
                             <span className="markdown-viewer-highlights__copy">
@@ -729,13 +734,11 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                               </button>
                             </span>
                           </div>
-                        ))
-                      ) : (
-                        <div className="markdown-viewer-highlights__empty">No highlights yet.</div>
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </aside>
+                  </aside>
+                ) : null}
               </div>
             ) : (
               <div className="markdown-viewer-empty-state" aria-label="No file open">

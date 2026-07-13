@@ -710,8 +710,12 @@ button:focus-visible {
   min-height: 0;
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
+}
+
+.markdown-viewer__workspace--with-highlights {
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
 
 .markdown-viewer__preview-pane {
