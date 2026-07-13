@@ -13,16 +13,18 @@ const files = [
 ];
 
 const editorLines = [
-  "import { Panel } from './ui/Panel';",
-  "import { Sidebar } from './ui/Sidebar';",
-  "",
-  "export default function AppShell() {",
-  "  return (",
-  "    <Workspace",
-  "      tone=\"light\"",
-  "      density=\"compact\"",
-  "    />",
-  "  );",
+  "{",
+  '  "name": "JSON Bench",',
+  '  "version": 1,',
+  '  "settings": {',
+  '    "theme": "vscode-light",',
+  '    "wrap": false,',
+  '    "lint": true',
+  "  },",
+  '  "items": [',
+  '    { "id": 1, "label": "Example" },',
+  '    { "id": 2, "label": "Scratch" }',
+  "  ]",
   "}"
 ];
 
@@ -37,10 +39,10 @@ const explorerItems = [
 
 const editorValue = editorLines.join("\n");
 
-export function DemoActivity() {
+export function JSONBenchActivity() {
   return (
     <>
-      <ActivitySidebar title="DEMO">
+      <ActivitySidebar title="JSON BENCH">
         <ActivityTree items={explorerItems} header="PROJECT" count={4} />
       </ActivitySidebar>
 
@@ -50,13 +52,14 @@ export function DemoActivity() {
         <section className="editor-panel">
           <ActivityBreadcrumbs crumbs={["src", "/", "app.tsx", "/", "Workspace"]} />
           <ActivityEditor
-            label="Example editor"
+            label="JSON bench editor"
             initialValue={editorValue}
+            mode="json"
             inspector={
               <ActivityInspectorCard
-                eyebrow="Light theme"
+                eyebrow="JSON bench"
                 title="Neutral panels, blue emphasis, square geometry."
-                body="This rebuild leans on the VS Code desktop language: slim borders, subdued chrome, tabbed editing, and a soft accent line instead of heavy shadows."
+                body="This activity starts as a copy of the Demo shell so it can become a JSON-focused workspace without reworking the surrounding layout."
               />
             }
           />

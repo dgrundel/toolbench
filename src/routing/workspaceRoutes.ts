@@ -1,15 +1,20 @@
-export type WorkspaceActivityId = "home" | "demo" | "markdown-viewer";
+export type WorkspaceActivityId = "home" | "demo" | "json-bench" | "markdown-viewer";
 
 export type WorkspaceRouteActivityId = Exclude<WorkspaceActivityId, "home">;
 
 const ACTIVITY_PATHS: Record<WorkspaceRouteActivityId, string> = {
   demo: "/demo",
+  "json-bench": "/json-bench",
   "markdown-viewer": "/markdown-viewer"
 };
 
 export function getWorkspaceActivityId(pathname: string): WorkspaceActivityId {
   if (pathname === ACTIVITY_PATHS.demo) {
     return "demo";
+  }
+
+  if (pathname === ACTIVITY_PATHS["json-bench"]) {
+    return "json-bench";
   }
 
   if (pathname === ACTIVITY_PATHS["markdown-viewer"]) {

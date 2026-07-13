@@ -8,6 +8,7 @@ import {
   useNavigate
 } from "react-router-dom";
 import { DemoActivity } from "./activities/DemoActivity";
+import { JSONBenchActivity } from "./activities/JSONBenchActivity";
 import { MarkdownViewerActivity } from "./activities/MarkdownViewerActivity";
 import { WorkspaceIcon, type WorkspaceIconName } from "./ui/workspace/WorkspaceIcon";
 import { WorkspaceHomeLauncher, type WorkspaceHomeLaunchItem } from "./ui/workspace/WorkspaceHomeLauncher";
@@ -33,6 +34,12 @@ const activities: Array<{
     label: "Markdown Viewer",
     icon: "activity-markdown",
     render: (props) => <MarkdownViewerActivity onStorageChange={props.onStorageChange} />
+  },
+  {
+    id: "json-bench",
+    label: "JSON Bench",
+    icon: "file-json",
+    render: () => <JSONBenchActivity />
   },
   {
     id: "demo",
@@ -129,6 +136,7 @@ function WorkspaceShell() {
           element={<WorkspaceHomeLauncher items={homeLaunchItems} onSelect={(id) => openActivity(id as Exclude<WorkspaceActivityId, "home">)} />}
         />
         <Route path="/demo" element={<DemoActivity />} />
+        <Route path="/json-bench" element={<JSONBenchActivity />} />
         <Route path="/markdown-viewer" element={<MarkdownViewerActivity onStorageChange={refresh} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
