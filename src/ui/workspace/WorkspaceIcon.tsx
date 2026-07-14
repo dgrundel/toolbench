@@ -14,6 +14,7 @@ import {
   IconHighlightOff,
   IconMarkdown,
   IconBookmark,
+  IconPlayerPlay,
   IconSquare2,
   IconTrash,
   IconX
@@ -38,6 +39,7 @@ type WorkspaceIconName =
   | "highlight"
   | "highlight-off"
   | "bookmark"
+  | "player-play"
   | "close";
 
 type WorkspaceIconProps = {
@@ -65,6 +67,7 @@ const iconMap = {
   highlight: IconHighlight,
   "highlight-off": IconHighlightOff,
   bookmark: IconBookmark,
+  "player-play": IconPlayerPlay,
   close: IconX
 } as const;
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
+import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 import { runJsonBenchTransform } from "./jsonBenchRuntime";
 
 const jsonSource = [
@@ -72,6 +73,7 @@ export function JSONBenchActivity() {
             type="button"
             onClick={handleRun}
           >
+            <WorkspaceIcon name="player-play" size={14} className="editor-panel__toolbar-button-icon" />
             Run
           </button>
         </ActivityToolbar>
