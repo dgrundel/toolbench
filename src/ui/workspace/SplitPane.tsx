@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 type SplitPaneAxis = "horizontal" | "vertical";
 
@@ -8,14 +9,18 @@ type SplitPaneProps = {
   secondary: ReactNode;
   size?: number;
   defaultSize?: number;
+  defaultSizeRatio?: number;
   minSize?: number;
+  minSizeRatio?: number;
   maxSize?: number;
+  maxSizeRatio?: number;
   onSizeChange?: (size: number) => void;
   className?: string;
   primaryClassName?: string;
   secondaryClassName?: string;
   dividerClassName?: string;
   dividerLabel?: string;
+  dividerCursor?: CSSProperties["cursor"];
 };
 
 const DEFAULT_SIZE = 320;
@@ -28,16 +33,21 @@ export function SplitPane({
   secondary,
   size,
   defaultSize = DEFAULT_SIZE,
+  defaultSizeRatio,
   minSize = DEFAULT_MIN_SIZE,
+  minSizeRatio,
   maxSize,
+  maxSizeRatio,
   onSizeChange,
   className,
   primaryClassName,
   secondaryClassName,
   dividerClassName,
-  dividerLabel = "Resize panel"
+  dividerLabel = "Resize panel",
+  dividerCursor
 }: SplitPaneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const initializedRatioSizeRef = useRef(false);
   const dragRef = useRef<{
     pointerId: number;
     startPosition: number;
@@ -51,19 +61,29 @@ export function SplitPane({
   const isControlled = size !== undefined;
   const currentSize = size ?? internalSize;
 
+  const minAllowedSize = useMemo(() => {
+    const ratioMin =
+      minSizeRatio !== undefined ? Math.floor(Math.max(0, containerSize - DIVIDER_SIZE) * minSizeRatio) : undefined;
+
+    return Math.max(minSize, ratioMin ?? minSize);
+  }, [containerSize, minSize, minSizeRatio]);
+
   const maxAllowedSize = useMemo(() => {
-    const availableSpace = Math.max(0, containerSize - minSize - DIVIDER_SIZE);
+    const availableSpace = Math.max(0, containerSize - minAllowedSize - DIVIDER_SIZE);
+    const ratioMax =
+      maxSizeRatio !== undefined ? Math.floor(Math.max(0, containerSize - DIVIDER_SIZE) * maxSizeRatio) : undefined;
     const fallbackMax = maxSize ?? availableSpace;
-    return Math.max(minSize, Math.min(fallbackMax, availableSpace));
-  }, [containerSize, maxSize, minSize]);
+    const cappedMax = ratioMax !== undefined ? Math.min(fallbackMax, ratioMax) : fallbackMax;
+    return Math.max(minAllowedSize, Math.min(cappedMax, availableSpace));
+  }, [containerSize, maxSize, maxSizeRatio, minAllowedSize]);
 
   const displayedSize = useMemo(() => {
     if (containerSize <= 0) {
       return currentSize;
     }
 
-    return clampSize(currentSize, minSize, maxAllowedSize);
-  }, [currentSize, containerSize, maxAllowedSize, minSize]);
+    return clampSize(currentSize, minAllowedSize, maxAllowedSize);
+  }, [currentSize, containerSize, maxAllowedSize, minAllowedSize]);
 
   useEffect(() => {
     if (!rootRef.current || typeof ResizeObserver === "undefined") {
@@ -88,7 +108,15 @@ export function SplitPane({
       return;
     }
 
-    const clampedSize = clampSize(currentSize, minSize, maxAllowedSize);
+    if (!isControlled && defaultSizeRatio !== undefined && !initializedRatioSizeRef.current) {
+      const ratioSize = Math.round(Math.max(0, containerSize - DIVIDER_SIZE) * defaultSizeRatio);
+      const nextSize = clampSize(ratioSize, minAllowedSize, maxAllowedSize);
+      initializedRatioSizeRef.current = true;
+      setInternalSize(nextSize);
+      return;
+    }
+
+    const clampedSize = clampSize(currentSize, minAllowedSize, maxAllowedSize);
 
     if (clampedSize === currentSize) {
       return;
@@ -99,7 +127,7 @@ export function SplitPane({
     } else {
       setInternalSize(clampedSize);
     }
-  }, [currentSize, isControlled, maxAllowedSize, minSize, onSizeChange, containerSize]);
+  }, [currentSize, defaultSizeRatio, isControlled, maxAllowedSize, minAllowedSize, onSizeChange, containerSize]);
 
   useEffect(() => {
     if (!isDragging) {
@@ -119,7 +147,7 @@ export function SplitPane({
   }, [axis, isDragging]);
 
   function updateSize(nextSize: number) {
-    const clamped = clampSize(nextSize, minSize, maxAllowedSize);
+    const clamped = clampSize(nextSize, minAllowedSize, maxAllowedSize);
 
     if (isControlled) {
       onSizeChange?.(clamped);
@@ -232,17 +260,19 @@ export function SplitPane({
         tabIndex={0}
         aria-label={dividerLabel}
         aria-orientation={axis === "horizontal" ? "vertical" : "horizontal"}
-        aria-valuemin={minSize}
+        aria-valuemin={minAllowedSize}
         aria-valuemax={maxAllowedSize}
         aria-valuenow={Math.round(displayedSize)}
         style={
           axis === "horizontal"
-            ? containerCrossSize > 0
-              ? { height: containerCrossSize }
-              : undefined
-            : containerCrossSize > 0
-              ? { width: containerCrossSize }
-              : undefined
+            ? {
+                ...(containerCrossSize > 0 ? { height: containerCrossSize } : {}),
+                ...(dividerCursor ? { cursor: dividerCursor } : {})
+              }
+            : {
+                ...(containerCrossSize > 0 ? { width: containerCrossSize } : {}),
+                ...(dividerCursor ? { cursor: dividerCursor } : {})
+              }
         }
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}

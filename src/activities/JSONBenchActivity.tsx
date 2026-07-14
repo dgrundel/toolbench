@@ -100,6 +100,7 @@ export function JSONBenchActivity() {
         secondaryClassName="json-bench-workspace__bottom-region"
         dividerClassName="json-bench-workspace__divider json-bench-workspace__divider--horizontal"
         dividerLabel="Resize output panel"
+        dividerCursor="row-resize"
         defaultSize={320}
         minSize={220}
         maxSize={560}
@@ -111,9 +112,10 @@ export function JSONBenchActivity() {
             secondaryClassName="json-bench-workspace__panel json-bench-workspace__panel--right"
             dividerClassName="json-bench-workspace__divider json-bench-workspace__divider--vertical"
             dividerLabel="Resize editors"
-            defaultSize={360}
-            minSize={260}
-            maxSize={700}
+            dividerCursor="col-resize"
+            defaultSizeRatio={0.5}
+            minSizeRatio={0.25}
+            maxSizeRatio={0.75}
             primary={
               <div className="json-bench-workspace__editor-column">
                 <ActivityTabs files={jsonTabs} onClose={() => setResetTarget("input")} />
