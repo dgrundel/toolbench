@@ -96,6 +96,9 @@ export function JSONBenchActivity() {
             value={transformSource}
             onChange={setTransformSource}
             mode="javascript"
+            onRunShortcut={() => {
+              void handleRun();
+            }}
           />
         </div>
       </section>

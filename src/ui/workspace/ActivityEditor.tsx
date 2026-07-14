@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import CodeMirror from "@uiw/react-codemirror";
+import { EditorView } from "@codemirror/view";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
@@ -11,6 +12,7 @@ type ActivityEditorProps = {
   value?: string;
   mode?: "plain" | "json" | "javascript";
   onChange?: (value: string) => void;
+  onRunShortcut?: () => void;
   inspector?: ReactNode;
 };
 
@@ -20,6 +22,7 @@ export function ActivityEditor({
   value,
   mode = "plain",
   onChange,
+  onRunShortcut,
   inspector
 }: ActivityEditorProps) {
   const [internalValue, setInternalValue] = useState(initialValue);
@@ -33,16 +36,38 @@ export function ActivityEditor({
   const editorValue = value ?? internalValue;
 
   const extensions = useMemo(() => {
+    const nextExtensions = [];
+
     if (mode === "json") {
-      return [json()];
+      nextExtensions.push(json());
     }
 
     if (mode === "javascript") {
-      return [javascript({ jsx: true })];
+      nextExtensions.push(javascript({ jsx: true }));
     }
 
-    return [];
-  }, [mode]);
+    if (onRunShortcut) {
+      nextExtensions.push(
+        EditorView.domEventHandlers({
+          keydown(event) {
+            if (event.isComposing) {
+              return false;
+            }
+
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              event.preventDefault();
+              onRunShortcut();
+              return true;
+            }
+
+            return false;
+          }
+        })
+      );
+    }
+
+    return nextExtensions;
+  }, [mode, onRunShortcut]);
 
   const handleChange = (nextValue: string) => {
     if (value === undefined) {
