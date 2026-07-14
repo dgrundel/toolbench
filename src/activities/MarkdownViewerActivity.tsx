@@ -61,6 +61,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [searchParams, setSearchParams] = useSearchParams();
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
+  const closingDocumentIdRef = useRef<string | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
   const previewPaneRef = useRef<HTMLDivElement | null>(null);
 
@@ -98,7 +99,16 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
 
   useEffect(() => {
     if (!selectedDocumentId) {
+      closingDocumentIdRef.current = null;
       return;
+    }
+
+    if (closingDocumentIdRef.current === selectedDocumentId) {
+      return;
+    }
+
+    if (closingDocumentIdRef.current !== null) {
+      closingDocumentIdRef.current = null;
     }
 
     if (openDocuments.some((document) => document.id === selectedDocumentId)) {
@@ -202,22 +212,25 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   }
 
   function closeDocument(documentId: string) {
-    setOpenDocuments((currentOpenDocuments) => {
-      const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
+    closingDocumentIdRef.current = documentId;
 
-      if (nextIndex === -1) {
-        return currentOpenDocuments;
-      }
+    const currentOpenDocuments = openDocuments;
+    const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
 
-      const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
+    if (nextIndex === -1) {
+      return;
+    }
 
-      if (selectedDocumentId === documentId) {
-        const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
-        setSelectedDocumentId(nextActiveDocument?.id ?? null);
-      }
+    const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
+    const nextActiveDocument = selectedDocumentId === documentId
+      ? nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null
+      : null;
 
-      return nextOpenDocuments;
-    });
+    setOpenDocuments(nextOpenDocuments);
+
+    if (selectedDocumentId === documentId) {
+      setSelectedDocumentId(nextActiveDocument?.id ?? null);
+    }
   }
 
   async function deleteDocument(documentId: string) {
@@ -227,24 +240,25 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         openRequestDocumentIdRef.current = null;
       }
 
+      closingDocumentIdRef.current = documentId;
+
       await deleteMarkdownDocument(documentId);
 
-      setOpenDocuments((currentOpenDocuments) => {
-        const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
+      const currentOpenDocuments = openDocuments;
+      const nextIndex = currentOpenDocuments.findIndex((document) => document.id === documentId);
 
-        if (nextIndex === -1) {
-          return currentOpenDocuments;
-        }
-
+      if (nextIndex !== -1) {
         const nextOpenDocuments = currentOpenDocuments.filter((document) => document.id !== documentId);
+        const nextActiveDocument = selectedDocumentId === documentId
+          ? nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null
+          : null;
+
+        setOpenDocuments(nextOpenDocuments);
 
         if (selectedDocumentId === documentId) {
-          const nextActiveDocument = nextOpenDocuments[nextIndex] ?? nextOpenDocuments[nextIndex - 1] ?? null;
           setSelectedDocumentId(nextActiveDocument?.id ?? null);
         }
-
-        return nextOpenDocuments;
-      });
+      }
 
       await refreshStoredDocuments();
     } catch (error) {
