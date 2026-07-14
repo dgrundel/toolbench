@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
+import { Modal } from "../ui/workspace/Modal";
 import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 import { JsonValueInspector } from "../ui/workspace/JsonValueInspector";
 import { runJsonBenchTransform } from "./jsonBenchRuntime";
@@ -33,6 +34,7 @@ export function JSONBenchActivity() {
   const [transformSource, setTransformSource] = useState(javascriptSource);
   const [executionState, setExecutionState] = useState<ExecutionState>({ kind: "idle" });
   const [copyButtonLabel, setCopyButtonLabel] = useState("Copy JSON");
+  const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
   const resetCopyTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -74,11 +76,25 @@ export function JSONBenchActivity() {
     }, 1500);
   }
 
+  function handleResetTab(target: ResetTarget) {
+    if (target === "input") {
+      setInputJson(jsonSource);
+    } else if (target === "transform") {
+      setTransformSource(javascriptSource);
+    } else {
+      setExecutionState({ kind: "idle" });
+    }
+
+    setExecutionState({ kind: "idle" });
+    setCopyButtonLabel("Copy JSON");
+    setResetTarget(null);
+  }
+
   return (
     <main className="json-bench-workspace">
       <section className="json-bench-workspace__top">
         <div className="json-bench-workspace__panel json-bench-workspace__panel--left">
-          <ActivityTabs files={jsonTabs} />
+          <ActivityTabs files={jsonTabs} onClose={() => setResetTarget("input")} />
           <ActivityEditor
             label="JSON bench JSON editor"
             initialValue={jsonSource}
@@ -89,7 +105,7 @@ export function JSONBenchActivity() {
         </div>
 
         <div className="json-bench-workspace__panel json-bench-workspace__panel--right">
-          <ActivityTabs files={javascriptTabs} />
+          <ActivityTabs files={javascriptTabs} onClose={() => setResetTarget("transform")} />
           <ActivityEditor
             label="JSON bench JavaScript editor"
             initialValue={javascriptSource}
@@ -104,7 +120,7 @@ export function JSONBenchActivity() {
       </section>
 
       <section className="json-bench-workspace__panel json-bench-workspace__panel--bottom" aria-label="Bottom panel">
-        <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} />
+        <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} onClose={() => handleResetTab("output")} />
         <ActivityToolbar label="Output actions">
           <button
             className="editor-panel__toolbar-button"
@@ -142,6 +158,42 @@ export function JSONBenchActivity() {
           ) : null}
         </div>
       </section>
+
+      <Modal
+        open={resetTarget === "input"}
+        title="Reset input JSON?"
+        onClose={() => setResetTarget(null)}
+        actions={
+          <>
+            <button className="modal__button modal__button--secondary" type="button" onClick={() => setResetTarget(null)}>
+              Cancel
+            </button>
+            <button className="modal__button modal__button--destructive" type="button" onClick={() => handleResetTab("input")}>
+              Reset
+            </button>
+          </>
+        }
+      >
+        <p>This will restore the input panel to its default JSON.</p>
+      </Modal>
+
+      <Modal
+        open={resetTarget === "transform"}
+        title="Reset transform code?"
+        onClose={() => setResetTarget(null)}
+        actions={
+          <>
+            <button className="modal__button modal__button--secondary" type="button" onClick={() => setResetTarget(null)}>
+              Cancel
+            </button>
+            <button className="modal__button modal__button--destructive" type="button" onClick={() => handleResetTab("transform")}>
+              Reset
+            </button>
+          </>
+        }
+      >
+        <p>This will restore the transform panel to its default JavaScript.</p>
+      </Modal>
     </main>
   );
 }
@@ -150,6 +202,8 @@ type ExecutionState =
   | { kind: "idle" }
   | { kind: "success"; value: unknown }
   | { kind: "error"; message: string };
+
+type ResetTarget = "input" | "transform" | "output" | null;
 
 function formatExecutionError(error: unknown) {
   if (error instanceof SyntaxError) {
