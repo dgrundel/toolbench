@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ActivitySidebar } from "../ui/workspace/ActivitySidebar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
@@ -269,6 +269,39 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
     }
   }
 
+  async function importMarkdownDocuments(
+    sources: Array<{
+      content: string;
+      preferredName?: string;
+    }>
+  ) {
+    const existingNames = new Set(storedDocuments.map((document) => document.name));
+    const importedDocuments: MarkdownLibraryDocument[] = [];
+
+    for (const source of sources) {
+      const name = uniqueDocumentName(
+        existingNames,
+        source.preferredName ?? getSuggestedMarkdownDocumentName(source.content)
+      );
+      existingNames.add(name);
+      const id = crypto.randomUUID();
+      const savedDocument = await saveMarkdownDocument({
+        id,
+        name,
+        content: source.content
+      });
+      importedDocuments.push({
+        ...savedDocument,
+        content: source.content,
+        highlights: []
+      });
+    }
+
+    await refreshStoredDocuments();
+
+    return importedDocuments;
+  }
+
   async function ingestFiles(fileList: FileList | File[]) {
     try {
       const droppedFiles = Array.from(fileList);
@@ -277,31 +310,53 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         return;
       }
 
-      const existingNames = new Set(storedDocuments.map((document) => document.name));
-      const importedDocuments: MarkdownLibraryDocument[] = [];
+      const importedDocuments = await importMarkdownDocuments(
+        await Promise.all(
+          droppedFiles.map(async (file) => ({
+            content: await file.text(),
+            preferredName: file.name || undefined
+          }))
+        )
+      );
 
-      for (const file of droppedFiles) {
-        const name = uniqueDocumentName(existingNames, file.name || "untitled.md");
-        existingNames.add(name);
-        const content = await file.text();
-        const id = crypto.randomUUID();
-        const savedDocument = await saveMarkdownDocument({
-          id,
-          name,
-          content
-        });
-        importedDocuments.push({
-          ...savedDocument,
-          content,
-          highlights: []
-        });
+      if (importedDocuments.length > 0) {
+        setOpenDocuments((currentOpenDocuments) => [...currentOpenDocuments, ...importedDocuments]);
+        setSelectedDocumentId(importedDocuments[importedDocuments.length - 1].id);
       }
-
-      await refreshStoredDocuments();
-      setOpenDocuments((currentOpenDocuments) => [...currentOpenDocuments, ...importedDocuments]);
-      setSelectedDocumentId(importedDocuments[importedDocuments.length - 1].id);
     } catch (error) {
       console.error("Failed to import markdown documents.", error);
+    } finally {
+      onStorageChange?.();
+    }
+  }
+
+  async function handlePaste(event: ClipboardEvent<HTMLElement>) {
+    if (isEditablePasteTarget(event.target)) {
+      return;
+    }
+
+    const pastedText = event.clipboardData.getData("text/plain");
+
+    if (pastedText.trim().length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      const importedDocuments = await importMarkdownDocuments([
+        {
+          content: pastedText
+        }
+      ]);
+
+      if (importedDocuments.length > 0) {
+        setOpenDocuments((currentOpenDocuments) => [...currentOpenDocuments, ...importedDocuments]);
+        setSelectedDocumentId(importedDocuments[importedDocuments.length - 1].id);
+      }
+    } catch (error) {
+      console.error("Failed to import pasted markdown content.", error);
     } finally {
       onStorageChange?.();
     }
@@ -618,6 +673,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop()}
+        onPasteCapture={handlePaste}
       >
         <ActivitySidebar title="MARKDOWN VIEWER">
           <ActivityTree
@@ -638,6 +694,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop()}
+        onPasteCapture={handlePaste}
       >
         <ActivityTabs
           files={files}
@@ -852,7 +909,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
             ) : (
               <div className="markdown-viewer-empty-state" aria-label="No file open">
                 <p className="markdown-viewer-empty-state__message">
-                  Open a file from the left or drag and drop one here to get started.
+                  Open a file from the left, drag and drop one here, or paste markdown content to add a file.
                 </p>
               </div>
             )}
@@ -918,4 +975,36 @@ function uniqueDocumentName(existingNames: Set<string>, baseName: string) {
   }
 
   return `${stem} (${suffix})${extension}`;
+}
+
+function getSuggestedMarkdownDocumentName(content: string) {
+  const renderedHtml = markdownToClipboardHtml(content);
+
+  if (renderedHtml.trim().length === 0) {
+    return "untitled";
+  }
+
+  const documentFragment = new DOMParser().parseFromString(renderedHtml, "text/html");
+  const renderedRoot = documentFragment.body.firstElementChild;
+
+  if (!renderedRoot) {
+    return "untitled";
+  }
+
+  const firstElement = renderedRoot.querySelector("*") ?? renderedRoot;
+  const text = normalizeSuggestedDocumentName(firstElement.textContent ?? "");
+
+  return text.length > 0 ? text : "untitled";
+}
+
+function normalizeSuggestedDocumentName(text: string) {
+  return text.replace(/\s+/g, " ").trim().slice(0, 36);
+}
+
+function isEditablePasteTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='plaintext-only']"));
 }
