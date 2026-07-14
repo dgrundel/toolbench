@@ -45,6 +45,14 @@ export function JSONBenchActivity() {
     }
   }
 
+  async function handleCopyResult() {
+    if (executionState.kind !== "success") {
+      return;
+    }
+
+    await navigator.clipboard.writeText(JSON.stringify(executionState.value, null, 2));
+  }
+
   return (
     <main className="json-bench-workspace">
       <section className="json-bench-workspace__top">
@@ -81,6 +89,17 @@ export function JSONBenchActivity() {
           >
             <WorkspaceIcon name="player-play" size={14} className="editor-panel__toolbar-button-icon" />
             Run
+          </button>
+          <button
+            className="editor-panel__toolbar-button"
+            type="button"
+            onClick={() => {
+              void handleCopyResult();
+            }}
+            disabled={executionState.kind !== "success"}
+          >
+            <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
+            Copy JSON
           </button>
         </ActivityToolbar>
         <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
