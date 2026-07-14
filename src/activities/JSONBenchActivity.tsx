@@ -7,16 +7,12 @@ import { runJsonBenchTransform } from "./jsonBenchRuntime";
 
 const jsonSource = [
   "{",
-  '  "name": "JSON Bench",',
-  '  "version": 1,',
-  '  "settings": {',
-  '    "theme": "vscode-light",',
-  '    "wrap": false,',
-  '    "lint": true',
-  "  },",
+  '  "title": "Example document",',
+  '  "active": true,',
+  '  "count": 2,',
   '  "items": [',
-  '    { "id": 1, "label": "Example" },',
-  '    { "id": 2, "label": "Scratch" }',
+  '    "alpha",',
+  '    "beta"',
   "  ]",
   "}"
 ].join("\n");
