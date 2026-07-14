@@ -5,6 +5,7 @@ import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { ActivityTree } from "../ui/workspace/ActivityTree";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { Modal } from "../ui/workspace/Modal";
+import { SplitPane } from "../ui/workspace/SplitPane";
 import {
   MarkdownPreview,
   markdownToClipboardHtml,
@@ -58,6 +59,7 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
   const [commentComposerTarget, setCommentComposerTarget] = useState<CommentComposerTarget>(null);
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<CommentDeleteTarget>(null);
   const [commentDraft, setCommentDraft] = useState("");
+  const [highlightsPaneSize, setHighlightsPaneSize] = useState(320);
   const [searchParams, setSearchParams] = useSearchParams();
   const openRequestIdRef = useRef(0);
   const openRequestDocumentIdRef = useRef<string | null>(null);
@@ -682,104 +684,114 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
             </ActivityToolbar>
 
             {activeDocument ? (
-              <div
-                className={`markdown-viewer__workspace ${
-                  showHighlightsPane ? "markdown-viewer__workspace--with-highlights" : ""
-                }`}
-              >
-                <div className="markdown-viewer__preview-pane" ref={previewPaneRef}>
-                  <MarkdownPreview
-                    label={activeDocument.name}
-                    content={activeDocument.content}
-                    highlightMode={highlightMode}
-                    highlights={activeHighlights}
-                    onCreateHighlight={handleCreateHighlight}
-                  />
-                </div>
-                {showHighlightsPane ? (
-                  <aside className="markdown-viewer__highlights-pane" aria-label="Highlights panel">
-                    <div className="markdown-viewer-highlights">
-                      <div className="markdown-viewer-highlights__header">
-                        <span>HIGHLIGHTS</span>
-                        <span className="markdown-viewer-highlights__count">{activeHighlights.length}</span>
-                      </div>
-                      <div className="markdown-viewer-highlights__body">
-                        {activeHighlights.map((highlight, index) => (
-                          <div key={highlight.id} className="markdown-viewer-highlights__item">
-                            <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
-                            <span className="markdown-viewer-highlights__copy">
-                              <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
-                              <span className="markdown-viewer-highlights__meta">{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
-                            </span>
-                            {openCommentHighlight?.id === highlight.id ? (
-                              <div className="markdown-viewer-highlights__comment-form">
-                                <textarea
-                                  className="markdown-viewer-highlights__comment-input"
-                                  value={commentDraft}
-                                  onChange={(event) => setCommentDraft(event.target.value)}
-                                  placeholder="Write a comment..."
-                                  rows={3}
-                                />
-                                <div className="markdown-viewer-highlights__comment-actions">
-                                  <button
-                                    type="button"
-                                    className="markdown-viewer-highlights__comment-delete"
-                                    aria-label={`Delete comment: ${highlight.excerpt}`}
-                                    onClick={() => requestDeleteComment(highlight)}
-                                  >
-                                    <WorkspaceIcon
-                                      name="delete"
-                                      size={14}
-                                      className="markdown-viewer-highlights__comment-delete-icon"
-                                    />
-                                  </button>
-                                  <span className="markdown-viewer-highlights__comment-actions-right">
+              showHighlightsPane ? (
+                <SplitPane
+                  axis="horizontal"
+                  className="markdown-viewer__workspace"
+                  primaryClassName="markdown-viewer__preview-pane"
+                  secondaryClassName="markdown-viewer__highlights-pane"
+                  dividerClassName="markdown-viewer__splitter"
+                  dividerLabel="Resize highlights panel"
+                  size={highlightsPaneSize}
+                  defaultSize={320}
+                  minSize={240}
+                  maxSize={560}
+                  onSizeChange={setHighlightsPaneSize}
+                  primary={
+                    <div ref={previewPaneRef}>
+                      <MarkdownPreview
+                        label={activeDocument.name}
+                        content={activeDocument.content}
+                        highlightMode={highlightMode}
+                        highlights={activeHighlights}
+                        onCreateHighlight={handleCreateHighlight}
+                      />
+                    </div>
+                  }
+                  secondary={
+                    <aside className="markdown-viewer__highlights-inner" aria-label="Highlights panel">
+                      <div className="markdown-viewer-highlights">
+                        <div className="markdown-viewer-highlights__header">
+                          <span>HIGHLIGHTS</span>
+                          <span className="markdown-viewer-highlights__count">{activeHighlights.length}</span>
+                        </div>
+                        <div className="markdown-viewer-highlights__body">
+                          {activeHighlights.map((highlight, index) => (
+                            <div key={highlight.id} className="markdown-viewer-highlights__item">
+                              <span className="markdown-viewer-highlights__swatch">{index + 1}</span>
+                              <span className="markdown-viewer-highlights__copy">
+                                <span className="markdown-viewer-highlights__excerpt">{highlight.excerpt}</span>
+                                <span className="markdown-viewer-highlights__meta">{`Range ${highlight.startOffset + 1}-${highlight.endOffset}`}</span>
+                              </span>
+                              {openCommentHighlight?.id === highlight.id ? (
+                                <div className="markdown-viewer-highlights__comment-form">
+                                  <textarea
+                                    className="markdown-viewer-highlights__comment-input"
+                                    value={commentDraft}
+                                    onChange={(event) => setCommentDraft(event.target.value)}
+                                    placeholder="Write a comment..."
+                                    rows={3}
+                                  />
+                                  <div className="markdown-viewer-highlights__comment-actions">
                                     <button
                                       type="button"
-                                      className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--secondary"
-                                      onClick={closeCommentComposer}
+                                      className="markdown-viewer-highlights__comment-delete"
+                                      aria-label={`Delete comment: ${highlight.excerpt}`}
+                                      onClick={() => requestDeleteComment(highlight)}
                                     >
-                                      Cancel
+                                      <WorkspaceIcon
+                                        name="delete"
+                                        size={14}
+                                        className="markdown-viewer-highlights__comment-delete-icon"
+                                      />
                                     </button>
+                                    <span className="markdown-viewer-highlights__comment-actions-right">
+                                      <button
+                                        type="button"
+                                        className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--secondary"
+                                        onClick={closeCommentComposer}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--primary"
+                                        onClick={saveCommentToStorage}
+                                      >
+                                        Save
+                                      </button>
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : getHighlightComment(highlight) ? (
+                                <div className="markdown-viewer-highlights__comment-display">
+                                  <div className="markdown-viewer-highlights__comment-display-header">
+                                    <div className="markdown-viewer-highlights__comment-display-label">Comment</div>
                                     <button
                                       type="button"
-                                      className="markdown-viewer-highlights__comment-action markdown-viewer-highlights__comment-action--primary"
-                                      onClick={saveCommentToStorage}
+                                      className="markdown-viewer-highlights__comment-edit"
+                                      aria-label={`Edit comment: ${highlight.excerpt}`}
+                                      onClick={() => toggleCommentComposer(highlight)}
                                     >
-                                      Save
+                                      <WorkspaceIcon
+                                        name="edit"
+                                        size={14}
+                                        className="markdown-viewer-highlights__comment-edit-icon"
+                                      />
                                     </button>
-                                  </span>
+                                  </div>
+                                  <div className="markdown-viewer-highlights__comment-display-body">
+                                    {getHighlightComment(highlight)}
+                                  </div>
                                 </div>
-                              </div>
-                            ) : getHighlightComment(highlight) ? (
-                              <div className="markdown-viewer-highlights__comment-display">
-                                <div className="markdown-viewer-highlights__comment-display-header">
-                                  <div className="markdown-viewer-highlights__comment-display-label">Comment</div>
+                              ) : null}
+                              <span className="markdown-viewer-highlights__actions">
+                                <span className="markdown-viewer-highlights__actions-primary">
                                   <button
                                     type="button"
-                                    className="markdown-viewer-highlights__comment-edit"
-                                    aria-label={`Edit comment: ${highlight.excerpt}`}
-                                    onClick={() => toggleCommentComposer(highlight)}
-                                  >
-                                    <WorkspaceIcon
-                                      name="edit"
-                                      size={14}
-                                      className="markdown-viewer-highlights__comment-edit-icon"
-                                    />
-                                  </button>
-                                </div>
-                                <div className="markdown-viewer-highlights__comment-display-body">
-                                  {getHighlightComment(highlight)}
-                                </div>
-                              </div>
-                            ) : null}
-                            <span className="markdown-viewer-highlights__actions">
-                              <span className="markdown-viewer-highlights__actions-primary">
-                                <button
-                                  type="button"
-                                  className="markdown-viewer-highlights__jump"
-                                  aria-label={`Jump to highlight: ${highlight.excerpt}`}
-                                  onClick={() => scrollToHighlight(highlight)}
+                                    className="markdown-viewer-highlights__jump"
+                                    aria-label={`Jump to highlight: ${highlight.excerpt}`}
+                                    onClick={() => scrollToHighlight(highlight)}
                                   >
                                     <WorkspaceIcon
                                       name="bookmark"
@@ -787,42 +799,55 @@ export function MarkdownViewerActivity({ onStorageChange }: MarkdownViewerActivi
                                       className="markdown-viewer-highlights__jump-icon"
                                     />
                                   </button>
-                                {!getHighlightComment(highlight) && openCommentHighlight?.id !== highlight.id ? (
-                                  <button
-                                    type="button"
-                                    className="markdown-viewer-highlights__comment-toggle"
-                                    aria-label={`Comment on highlight: ${highlight.excerpt}`}
-                                    aria-pressed={openCommentHighlight?.id === highlight.id}
-                                    onClick={() => toggleCommentComposer(highlight)}
-                                  >
-                                    <WorkspaceIcon
-                                      name="comment"
-                                      size={14}
-                                      className="markdown-viewer-highlights__comment-toggle-icon"
-                                    />
-                                  </button>
-                                ) : null}
+                                  {!getHighlightComment(highlight) && openCommentHighlight?.id !== highlight.id ? (
+                                    <button
+                                      type="button"
+                                      className="markdown-viewer-highlights__comment-toggle"
+                                      aria-label={`Comment on highlight: ${highlight.excerpt}`}
+                                      aria-pressed={openCommentHighlight?.id === highlight.id}
+                                      onClick={() => toggleCommentComposer(highlight)}
+                                    >
+                                      <WorkspaceIcon
+                                        name="comment"
+                                        size={14}
+                                        className="markdown-viewer-highlights__comment-toggle-icon"
+                                      />
+                                    </button>
+                                  ) : null}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="markdown-viewer-highlights__delete"
+                                  aria-label={`Delete highlight: ${highlight.excerpt}`}
+                                  onClick={() => requestDeleteHighlight(highlight)}
+                                >
+                                  <WorkspaceIcon
+                                    name="delete"
+                                    size={14}
+                                    className="markdown-viewer-highlights__delete-icon"
+                                  />
+                                </button>
                               </span>
-                              <button
-                                type="button"
-                                className="markdown-viewer-highlights__delete"
-                                aria-label={`Delete highlight: ${highlight.excerpt}`}
-                                onClick={() => requestDeleteHighlight(highlight)}
-                              >
-                                <WorkspaceIcon
-                                  name="delete"
-                                  size={14}
-                                  className="markdown-viewer-highlights__delete-icon"
-                                />
-                              </button>
-                            </span>
-                          </div>
-                        ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </aside>
-                ) : null}
-              </div>
+                    </aside>
+                  }
+                />
+              ) : (
+                <div className="markdown-viewer__workspace">
+                  <div className="markdown-viewer__preview-pane" ref={previewPaneRef}>
+                    <MarkdownPreview
+                      label={activeDocument.name}
+                      content={activeDocument.content}
+                      highlightMode={highlightMode}
+                      highlights={activeHighlights}
+                      onCreateHighlight={handleCreateHighlight}
+                    />
+                  </div>
+                </div>
+              )
             ) : (
               <div className="markdown-viewer-empty-state" aria-label="No file open">
                 <p className="markdown-viewer-empty-state__message">
