@@ -21,7 +21,7 @@ const jsonSource = [
 const jsonTabs = [{ name: "input.json", kind: "json", active: true }];
 
 const javascriptSource = [
-  "export default function transform(input) {",
+  "export default async function transform(input) {",
   "  return input;",
   "}"
 ].join("\n");
