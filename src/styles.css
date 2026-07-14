@@ -496,32 +496,59 @@ button:focus-visible {
   grid-row: 1;
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-rows: minmax(0, 45fr) minmax(0, 55fr);
+  height: 100%;
   background: #f7f8fa;
 }
 
-.json-bench-workspace__top {
+.json-bench-workspace__split {
+  width: 100%;
+  height: 100%;
+}
+
+.json-bench-workspace__split--outer {
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  border-bottom: 1px solid var(--line);
+}
+
+.json-bench-workspace__split--inner {
+  min-width: 0;
+  min-height: 0;
+  background: #f7f8fa;
 }
 
 .json-bench-workspace__panel {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.json-bench-workspace__panel--left {
-  border-right: 1px solid var(--line);
+.json-bench-workspace__top-region {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: #f7f8fa;
 }
 
-.json-bench-workspace__panel--bottom {
-  border-top: 1px solid var(--line);
+.json-bench-workspace__bottom-region {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: #f7f8fa;
+}
+
+.json-bench-workspace__editor-column {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-bench-workspace__editor-column > .editor {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .json-bench-workspace__bottom {
@@ -539,6 +566,20 @@ button:focus-visible {
   background: var(--panel-strong);
   box-shadow: var(--shadow);
   color: var(--text);
+}
+
+.json-bench-workspace__divider {
+  background: #e8ebef;
+}
+
+.json-bench-workspace__divider--horizontal {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.json-bench-workspace__divider--vertical {
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
 }
 
 .json-bench-workspace__error {
@@ -917,6 +958,7 @@ button:focus-visible {
   min-width: 0;
   min-height: 0;
   display: flex;
+  align-items: stretch;
   overflow: hidden;
   background: #f7f8fa;
 }
@@ -969,6 +1011,7 @@ button:focus-visible {
 
 .split-pane--horizontal .split-pane__divider {
   width: 6px;
+  align-self: stretch;
   cursor: col-resize;
   border-left: 1px solid var(--line-soft);
   border-right: 1px solid var(--line-soft);
@@ -976,6 +1019,7 @@ button:focus-visible {
 
 .split-pane--vertical .split-pane__divider {
   height: 6px;
+  align-self: stretch;
   cursor: row-resize;
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);

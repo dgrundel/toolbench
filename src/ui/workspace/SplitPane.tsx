@@ -45,6 +45,7 @@ export function SplitPane({
   } | null>(null);
   const [internalSize, setInternalSize] = useState(defaultSize);
   const [containerSize, setContainerSize] = useState(0);
+  const [containerCrossSize, setContainerCrossSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
   const isControlled = size !== undefined;
@@ -71,8 +72,8 @@ export function SplitPane({
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
-      const nextSize = axis === "horizontal" ? entry.contentRect.width : entry.contentRect.height;
-      setContainerSize(nextSize);
+      setContainerSize(axis === "horizontal" ? entry.contentRect.width : entry.contentRect.height);
+      setContainerCrossSize(axis === "horizontal" ? entry.contentRect.height : entry.contentRect.width);
     });
 
     observer.observe(rootRef.current);
@@ -234,6 +235,15 @@ export function SplitPane({
         aria-valuemin={minSize}
         aria-valuemax={maxAllowedSize}
         aria-valuenow={Math.round(displayedSize)}
+        style={
+          axis === "horizontal"
+            ? containerCrossSize > 0
+              ? { height: containerCrossSize }
+              : undefined
+            : containerCrossSize > 0
+              ? { width: containerCrossSize }
+              : undefined
+        }
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

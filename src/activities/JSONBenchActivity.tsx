@@ -3,6 +3,7 @@ import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { Modal } from "../ui/workspace/Modal";
+import { SplitPane } from "../ui/workspace/SplitPane";
 import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
 import { JsonValueInspector } from "../ui/workspace/JsonValueInspector";
 import { runJsonBenchTransform } from "./jsonBenchRuntime";
@@ -92,72 +93,98 @@ export function JSONBenchActivity() {
 
   return (
     <main className="json-bench-workspace">
-      <section className="json-bench-workspace__top">
-        <div className="json-bench-workspace__panel json-bench-workspace__panel--left">
-          <ActivityTabs files={jsonTabs} onClose={() => setResetTarget("input")} />
-          <ActivityEditor
-            label="JSON bench JSON editor"
-            initialValue={jsonSource}
-            value={inputJson}
-            mode="json"
-            onChange={setInputJson}
-          />
-        </div>
-
-        <div className="json-bench-workspace__panel json-bench-workspace__panel--right">
-          <ActivityTabs files={javascriptTabs} onClose={() => setResetTarget("transform")} />
-          <ActivityEditor
-            label="JSON bench JavaScript editor"
-            initialValue={javascriptSource}
-            value={transformSource}
-            onChange={setTransformSource}
-            mode="javascript"
-            onRunShortcut={() => {
-              void handleRun();
-            }}
-          />
-        </div>
-      </section>
-
-      <section className="json-bench-workspace__panel json-bench-workspace__panel--bottom" aria-label="Bottom panel">
-        <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} onClose={() => handleResetTab("output")} />
-        <ActivityToolbar label="Output actions">
-          <button
-            className="editor-panel__toolbar-button"
-            type="button"
-            onClick={handleRun}
-          >
-            <WorkspaceIcon name="player-play" size={14} className="editor-panel__toolbar-button-icon" />
-            Run
-          </button>
-          <button
-            className="editor-panel__toolbar-button"
-            type="button"
-            onClick={() => {
-              void handleCopyResult();
-            }}
-            disabled={executionState.kind !== "success"}
-          >
-            <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
-            {copyButtonLabel}
-          </button>
-        </ActivityToolbar>
-        <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
-          {executionState.kind === "error" ? (
-            <div className="json-bench-workspace__error" role="alert" aria-live="assertive">
-              <div className="json-bench-workspace__error-header">
-                <WorkspaceIcon name="alert-triangle" size={16} className="json-bench-workspace__error-icon" />
-                <span className="json-bench-workspace__error-title">Execution failed</span>
+      <SplitPane
+        axis="vertical"
+        className="json-bench-workspace__split json-bench-workspace__split--outer"
+        primaryClassName="json-bench-workspace__top-region"
+        secondaryClassName="json-bench-workspace__bottom-region"
+        dividerClassName="json-bench-workspace__divider json-bench-workspace__divider--horizontal"
+        dividerLabel="Resize output panel"
+        defaultSize={320}
+        minSize={220}
+        maxSize={560}
+        primary={
+          <SplitPane
+            axis="horizontal"
+            className="json-bench-workspace__split json-bench-workspace__split--inner"
+            primaryClassName="json-bench-workspace__panel json-bench-workspace__panel--left"
+            secondaryClassName="json-bench-workspace__panel json-bench-workspace__panel--right"
+            dividerClassName="json-bench-workspace__divider json-bench-workspace__divider--vertical"
+            dividerLabel="Resize editors"
+            defaultSize={360}
+            minSize={260}
+            maxSize={700}
+            primary={
+              <div className="json-bench-workspace__editor-column">
+                <ActivityTabs files={jsonTabs} onClose={() => setResetTarget("input")} />
+                <ActivityEditor
+                  label="JSON bench JSON editor"
+                  initialValue={jsonSource}
+                  value={inputJson}
+                  mode="json"
+                  onChange={setInputJson}
+                />
               </div>
-              <div className="json-bench-workspace__error-message">{executionState.message}</div>
+            }
+            secondary={
+              <div className="json-bench-workspace__editor-column">
+                <ActivityTabs files={javascriptTabs} onClose={() => setResetTarget("transform")} />
+                <ActivityEditor
+                  label="JSON bench JavaScript editor"
+                  initialValue={javascriptSource}
+                  value={transformSource}
+                  onChange={setTransformSource}
+                  mode="javascript"
+                  onRunShortcut={() => {
+                    void handleRun();
+                  }}
+                />
+              </div>
+            }
+          />
+        }
+        secondary={
+          <section className="json-bench-workspace__panel json-bench-workspace__panel--bottom" aria-label="Bottom panel">
+            <ActivityTabs files={[{ name: "output.json", kind: "json", active: true }]} onClose={() => handleResetTab("output")} />
+            <ActivityToolbar label="Output actions">
+              <button
+                className="editor-panel__toolbar-button"
+                type="button"
+                onClick={handleRun}
+              >
+                <WorkspaceIcon name="player-play" size={14} className="editor-panel__toolbar-button-icon" />
+                Run
+              </button>
+              <button
+                className="editor-panel__toolbar-button"
+                type="button"
+                onClick={() => {
+                  void handleCopyResult();
+                }}
+                disabled={executionState.kind !== "success"}
+              >
+                <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
+                {copyButtonLabel}
+              </button>
+            </ActivityToolbar>
+            <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
+              {executionState.kind === "error" ? (
+                <div className="json-bench-workspace__error" role="alert" aria-live="assertive">
+                  <div className="json-bench-workspace__error-header">
+                    <WorkspaceIcon name="alert-triangle" size={16} className="json-bench-workspace__error-icon" />
+                    <span className="json-bench-workspace__error-title">Execution failed</span>
+                  </div>
+                  <div className="json-bench-workspace__error-message">{executionState.message}</div>
+                </div>
+              ) : executionState.kind === "success" ? (
+                <div className="json-bench-workspace__result">
+                  <JsonValueInspector value={executionState.value} />
+                </div>
+              ) : null}
             </div>
-          ) : executionState.kind === "success" ? (
-            <div className="json-bench-workspace__result">
-              <JsonValueInspector value={executionState.value} />
-            </div>
-          ) : null}
-        </div>
-      </section>
+          </section>
+        }
+      />
 
       <Modal
         open={resetTarget === "input"}
