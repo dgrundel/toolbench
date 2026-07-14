@@ -1056,6 +1056,36 @@ button:focus-visible {
   pointer-events: none;
 }
 
+.markdown-viewer-highlights__comment-edit {
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8a909b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.markdown-viewer-highlights__comment-edit:hover,
+.markdown-viewer-highlights__comment-edit:focus-visible {
+  border-color: rgba(0, 122, 204, 0.18);
+  background: rgba(0, 122, 204, 0.08);
+  color: #0b73b9;
+}
+
+.markdown-viewer-highlights__comment-edit-icon {
+  pointer-events: none;
+}
+
+.markdown-viewer-highlights__comment-actions-right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .markdown-viewer-highlights__comment-display-body {
   color: #2f3441;
   font-size: 0.88rem;
@@ -1073,6 +1103,7 @@ button:focus-visible {
   background: #ffffff;
   color: #2f3441;
   font: inherit;
+  font-size: 0.88rem;
   line-height: 1.5;
   border-radius: 3px;
   outline: none;
@@ -1085,7 +1116,7 @@ button:focus-visible {
 
 .markdown-viewer-highlights__comment-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
   gap: 8px;
 }
 

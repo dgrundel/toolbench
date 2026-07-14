@@ -18,6 +18,7 @@ import {
   IconMarkdown,
   IconBookmark,
   IconPlayerPlay,
+  IconPencil,
   IconSquare2,
   IconTrash,
   IconX
@@ -42,6 +43,7 @@ type WorkspaceIconName =
   | "highlight"
   | "highlight-off"
   | "bookmark"
+  | "edit"
   | "player-play"
   | "alert-triangle"
   | "caret-down"
@@ -73,6 +75,7 @@ const iconMap = {
   highlight: IconHighlight,
   "highlight-off": IconHighlightOff,
   bookmark: IconBookmark,
+  edit: IconPencil,
   "player-play": IconPlayerPlay,
   "alert-triangle": IconAlertTriangle,
   "caret-down": IconChevronDown,
