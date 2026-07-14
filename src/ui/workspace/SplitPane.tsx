@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { CSSProperties } from "react";
 
 type SplitPaneAxis = "horizontal" | "vertical";
 
@@ -16,11 +15,7 @@ type SplitPaneProps = {
   maxSizeRatio?: number;
   onSizeChange?: (size: number) => void;
   className?: string;
-  primaryClassName?: string;
-  secondaryClassName?: string;
-  dividerClassName?: string;
   dividerLabel?: string;
-  dividerCursor?: CSSProperties["cursor"];
 };
 
 const DEFAULT_SIZE = 320;
@@ -40,11 +35,7 @@ export function SplitPane({
   maxSizeRatio,
   onSizeChange,
   className,
-  primaryClassName,
-  secondaryClassName,
-  dividerClassName,
-  dividerLabel = "Resize panel",
-  dividerCursor
+  dividerLabel = "Resize panel"
 }: SplitPaneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const initializedRatioSizeRef = useRef(false);
@@ -248,14 +239,12 @@ export function SplitPane({
         .join(" ")}
     >
       <div
-        className={["split-pane__pane", "split-pane__pane--primary", primaryClassName ?? ""]
-          .filter(Boolean)
-          .join(" ")}
+        className={["split-pane__pane", "split-pane__pane--primary"].join(" ")}
       >
         {primary}
       </div>
       <div
-        className={["split-pane__divider", dividerClassName ?? ""].filter(Boolean).join(" ")}
+        className="split-pane__divider"
         role="separator"
         tabIndex={0}
         aria-label={dividerLabel}
@@ -265,14 +254,8 @@ export function SplitPane({
         aria-valuenow={Math.round(displayedSize)}
         style={
           axis === "horizontal"
-            ? {
-                ...(containerCrossSize > 0 ? { height: containerCrossSize } : {}),
-                ...(dividerCursor ? { cursor: dividerCursor } : {})
-              }
-            : {
-                ...(containerCrossSize > 0 ? { width: containerCrossSize } : {}),
-                ...(dividerCursor ? { cursor: dividerCursor } : {})
-              }
+            ? { height: containerCrossSize, cursor: "col-resize" }
+            : { width: containerCrossSize, cursor: "row-resize" }
         }
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
@@ -281,9 +264,7 @@ export function SplitPane({
         onPointerCancel={endDrag}
       />
       <div
-        className={["split-pane__pane", "split-pane__pane--secondary", secondaryClassName ?? ""]
-          .filter(Boolean)
-          .join(" ")}
+        className={["split-pane__pane", "split-pane__pane--secondary"].join(" ")}
         style={axis === "horizontal" ? { width: displayedSize } : { height: displayedSize }}
       >
         {secondary}

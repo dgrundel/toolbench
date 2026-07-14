@@ -568,20 +568,6 @@ button:focus-visible {
   color: var(--text);
 }
 
-.json-bench-workspace__divider {
-  background: #e8ebef;
-}
-
-.json-bench-workspace__divider--horizontal {
-  border-top: 1px solid var(--line-soft);
-  border-bottom: 1px solid var(--line-soft);
-}
-
-.json-bench-workspace__divider--vertical {
-  border-left: 1px solid var(--line-soft);
-  border-right: 1px solid var(--line-soft);
-}
-
 .json-bench-workspace__error {
   border: 1px solid rgba(198, 53, 73, 0.28);
   border-left: 4px solid #c63549;
