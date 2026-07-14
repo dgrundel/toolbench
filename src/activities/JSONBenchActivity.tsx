@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
@@ -32,9 +32,20 @@ export function JSONBenchActivity() {
   const [inputJson, setInputJson] = useState(jsonSource);
   const [transformSource, setTransformSource] = useState(javascriptSource);
   const [executionState, setExecutionState] = useState<ExecutionState>({ kind: "idle" });
+  const [copyButtonLabel, setCopyButtonLabel] = useState("Copy JSON");
+  const resetCopyTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetCopyTimer.current !== null) {
+        window.clearTimeout(resetCopyTimer.current);
+      }
+    };
+  }, []);
 
   async function handleRun() {
     setExecutionState({ kind: "idle" });
+    setCopyButtonLabel("Copy JSON");
 
     try {
       const result = await runJsonBenchTransform(transformSource, inputJson);
@@ -51,6 +62,16 @@ export function JSONBenchActivity() {
     }
 
     await navigator.clipboard.writeText(JSON.stringify(executionState.value, null, 2));
+    setCopyButtonLabel("Copied JSON");
+
+    if (resetCopyTimer.current !== null) {
+      window.clearTimeout(resetCopyTimer.current);
+    }
+
+    resetCopyTimer.current = window.setTimeout(() => {
+      setCopyButtonLabel("Copy JSON");
+      resetCopyTimer.current = null;
+    }, 1500);
   }
 
   return (
@@ -99,7 +120,7 @@ export function JSONBenchActivity() {
             disabled={executionState.kind !== "success"}
           >
             <WorkspaceIcon name="copy" size={14} className="editor-panel__toolbar-button-icon" />
-            Copy JSON
+            {copyButtonLabel}
           </button>
         </ActivityToolbar>
         <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
