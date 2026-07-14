@@ -533,6 +533,14 @@ button:focus-visible {
   overflow: auto;
 }
 
+.json-bench-workspace__result {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
 .json-bench-workspace__error {
   border: 1px solid rgba(198, 53, 73, 0.28);
   border-left: 4px solid #c63549;
@@ -566,6 +574,114 @@ button:focus-visible {
   font-weight: 500;
   line-height: 1.45;
   color: #8f1f35;
+}
+
+.json-inspector {
+  min-width: 0;
+}
+
+.json-inspector__details {
+  margin: 0;
+}
+
+.json-inspector__details:not(:last-child) {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.json-inspector__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  list-style: none;
+  cursor: pointer;
+  background: #f7f8fa;
+  color: #3a404b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  user-select: none;
+}
+
+.json-inspector__summary::-webkit-details-marker {
+  display: none;
+}
+
+.json-inspector__summary::before {
+  content: "▾";
+  color: #6e7480;
+  font-size: 0.74rem;
+  line-height: 1;
+  transition: transform 120ms ease;
+}
+
+.json-inspector__details:not([open]) > .json-inspector__summary::before {
+  content: "▸";
+}
+
+.json-inspector__children {
+  min-width: 0;
+}
+
+.json-inspector__row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  min-width: 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.json-inspector__row:first-child {
+  border-top: 0;
+}
+
+.json-inspector__children--array .json-inspector__row {
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.json-inspector__key {
+  min-width: 0;
+  padding: 8px 12px;
+  border-right: 1px solid var(--line-soft);
+  background: #fcfcfd;
+  color: #4e5662;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+.json-inspector__key--index {
+  color: #6d7481;
+}
+
+.json-inspector__value {
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.json-inspector__scalar {
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.json-inspector__scalar--string {
+  color: #0b6b53;
+}
+
+.json-inspector__scalar--number {
+  color: #0b5f9b;
+}
+
+.json-inspector__scalar--boolean {
+  color: #7b4bb3;
+}
+
+.json-inspector__scalar--null {
+  color: #a14b2d;
+}
+
+.json-inspector__scalar--unknown {
+  color: #555b67;
 }
 
 .markdown-viewer-empty-state {

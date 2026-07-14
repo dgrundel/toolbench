@@ -3,6 +3,7 @@ import { ActivityEditor } from "../ui/workspace/ActivityEditor";
 import { ActivityToolbar } from "../ui/workspace/ActivityToolbar";
 import { ActivityTabs } from "../ui/workspace/ActivityTabs";
 import { WorkspaceIcon } from "../ui/workspace/WorkspaceIcon";
+import { JsonValueInspector } from "../ui/workspace/JsonValueInspector";
 import { runJsonBenchTransform } from "./jsonBenchRuntime";
 
 const jsonSource = [
@@ -30,16 +31,17 @@ const javascriptTabs = [{ name: "transform.js", kind: "js", active: true }];
 export function JSONBenchActivity() {
   const [inputJson, setInputJson] = useState(jsonSource);
   const [transformSource, setTransformSource] = useState(javascriptSource);
-  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [executionState, setExecutionState] = useState<ExecutionState>({ kind: "idle" });
 
   async function handleRun() {
-    setExecutionError(null);
+    setExecutionState({ kind: "idle" });
 
     try {
       const result = await runJsonBenchTransform(transformSource, inputJson);
       console.log(result);
+      setExecutionState({ kind: "success", value: result });
     } catch (error) {
-      setExecutionError(formatExecutionError(error));
+      setExecutionState({ kind: "error", message: formatExecutionError(error) });
     }
   }
 
@@ -82,13 +84,17 @@ export function JSONBenchActivity() {
           </button>
         </ActivityToolbar>
         <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
-          {executionError ? (
+          {executionState.kind === "error" ? (
             <div className="json-bench-workspace__error" role="alert" aria-live="assertive">
               <div className="json-bench-workspace__error-header">
                 <WorkspaceIcon name="alert-triangle" size={16} className="json-bench-workspace__error-icon" />
                 <span className="json-bench-workspace__error-title">Execution failed</span>
               </div>
-              <div className="json-bench-workspace__error-message">{executionError}</div>
+              <div className="json-bench-workspace__error-message">{executionState.message}</div>
+            </div>
+          ) : executionState.kind === "success" ? (
+            <div className="json-bench-workspace__result">
+              <JsonValueInspector value={executionState.value} />
             </div>
           ) : null}
         </div>
@@ -96,6 +102,11 @@ export function JSONBenchActivity() {
     </main>
   );
 }
+
+type ExecutionState =
+  | { kind: "idle" }
+  | { kind: "success"; value: unknown }
+  | { kind: "error"; message: string };
 
 function formatExecutionError(error: unknown) {
   if (error instanceof SyntaxError) {
