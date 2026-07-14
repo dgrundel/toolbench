@@ -34,9 +34,17 @@ const javascriptTabs = [{ name: "transform.js", kind: "js", active: true }];
 export function JSONBenchActivity() {
   const [inputJson, setInputJson] = useState(jsonSource);
   const [transformSource, setTransformSource] = useState(javascriptSource);
+  const [executionError, setExecutionError] = useState<string | null>(null);
 
-  function handleRun() {
-    void runJsonBenchTransform(transformSource, inputJson);
+  async function handleRun() {
+    setExecutionError(null);
+
+    try {
+      const result = await runJsonBenchTransform(transformSource, inputJson);
+      console.log(result);
+    } catch (error) {
+      setExecutionError(formatExecutionError(error));
+    }
   }
 
   return (
@@ -77,8 +85,30 @@ export function JSONBenchActivity() {
             Run
           </button>
         </ActivityToolbar>
-        <div className="json-bench-workspace__bottom" aria-label="JSON output preview" />
+        <div className="json-bench-workspace__bottom" aria-label="JSON output preview">
+          {executionError ? (
+            <div className="json-bench-workspace__error" role="alert" aria-live="assertive">
+              <div className="json-bench-workspace__error-header">
+                <WorkspaceIcon name="alert-triangle" size={16} className="json-bench-workspace__error-icon" />
+                <span className="json-bench-workspace__error-title">Execution failed</span>
+              </div>
+              <div className="json-bench-workspace__error-message">{executionError}</div>
+            </div>
+          ) : null}
+        </div>
       </section>
     </main>
   );
+}
+
+function formatExecutionError(error: unknown) {
+  if (error instanceof SyntaxError) {
+    return `Input JSON parse error: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return error.message || "Execution error";
+  }
+
+  return String(error);
 }

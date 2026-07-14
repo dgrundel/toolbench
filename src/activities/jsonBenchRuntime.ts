@@ -85,8 +85,9 @@ export async function runJsonBenchTransform(sourceCode: string, inputText: strin
       });
     });
 
-    console.log(result);
+    return result;
   } catch (error) {
     console.error(error);
+    throw error;
   }
 }

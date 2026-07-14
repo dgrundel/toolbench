@@ -8,6 +8,7 @@ import {
   IconFileTypeJs,
   IconFileTypeTsx,
   IconFileText,
+  IconAlertTriangle,
   IconFolder,
   IconLayoutGrid,
   IconHighlight,
@@ -40,6 +41,7 @@ type WorkspaceIconName =
   | "highlight-off"
   | "bookmark"
   | "player-play"
+  | "alert-triangle"
   | "close";
 
 type WorkspaceIconProps = {
@@ -68,6 +70,7 @@ const iconMap = {
   "highlight-off": IconHighlightOff,
   bookmark: IconBookmark,
   "player-play": IconPlayerPlay,
+  "alert-triangle": IconAlertTriangle,
   close: IconX
 } as const;
 
