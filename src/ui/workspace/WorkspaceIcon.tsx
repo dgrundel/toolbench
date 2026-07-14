@@ -9,6 +9,8 @@ import {
   IconFileTypeTsx,
   IconFileText,
   IconAlertTriangle,
+  IconChevronDown,
+  IconChevronRight,
   IconFolder,
   IconLayoutGrid,
   IconHighlight,
@@ -42,6 +44,8 @@ type WorkspaceIconName =
   | "bookmark"
   | "player-play"
   | "alert-triangle"
+  | "caret-down"
+  | "caret-right"
   | "close";
 
 type WorkspaceIconProps = {
@@ -71,6 +75,8 @@ const iconMap = {
   bookmark: IconBookmark,
   "player-play": IconPlayerPlay,
   "alert-triangle": IconAlertTriangle,
+  "caret-down": IconChevronDown,
+  "caret-right": IconChevronRight,
   close: IconX
 } as const;
 

@@ -1,3 +1,5 @@
+import { WorkspaceIcon } from "./WorkspaceIcon";
+
 type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
 
 type JsonObject = {
@@ -16,7 +18,11 @@ function renderJsonValue(value: JsonValue | unknown): JSX.Element {
   if (Array.isArray(value)) {
     return (
       <details className="json-inspector__details" open>
-        <summary className="json-inspector__summary">{summaryLabel("Array", value.length)}</summary>
+        <summary className="json-inspector__summary">
+          <WorkspaceIcon name="caret-down" size={12} className="json-inspector__summary-icon json-inspector__summary-icon--open" />
+          <WorkspaceIcon name="caret-right" size={12} className="json-inspector__summary-icon json-inspector__summary-icon--closed" />
+          {summaryLabel("Array", value.length)}
+        </summary>
         <div className="json-inspector__children json-inspector__children--array">
           {value.map((item, index) => (
             <div className="json-inspector__row" key={index}>
@@ -34,7 +40,11 @@ function renderJsonValue(value: JsonValue | unknown): JSX.Element {
 
     return (
       <details className="json-inspector__details" open>
-        <summary className="json-inspector__summary">{summaryLabel("Object", entries.length)}</summary>
+        <summary className="json-inspector__summary">
+          <WorkspaceIcon name="caret-down" size={12} className="json-inspector__summary-icon json-inspector__summary-icon--open" />
+          <WorkspaceIcon name="caret-right" size={12} className="json-inspector__summary-icon json-inspector__summary-icon--closed" />
+          {summaryLabel("Object", entries.length)}
+        </summary>
         <div className="json-inspector__children json-inspector__children--object">
           {entries.map(([key, item]) => (
             <div className="json-inspector__row" key={key}>

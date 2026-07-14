@@ -606,16 +606,21 @@ button:focus-visible {
   display: none;
 }
 
-.json-inspector__summary::before {
-  content: "▾";
+.json-inspector__summary-icon {
+  flex: none;
   color: #6e7480;
-  font-size: 0.74rem;
-  line-height: 1;
-  transition: transform 120ms ease;
 }
 
-.json-inspector__details:not([open]) > .json-inspector__summary::before {
-  content: "▸";
+.json-inspector__summary-icon--open {
+  display: none;
+}
+
+.json-inspector__details[open] > .json-inspector__summary .json-inspector__summary-icon--open {
+  display: inline-block;
+}
+
+.json-inspector__details[open] > .json-inspector__summary .json-inspector__summary-icon--closed {
+  display: none;
 }
 
 .json-inspector__children {
@@ -633,7 +638,7 @@ button:focus-visible {
   border-top: 0;
 }
 
-.json-inspector__children--array .json-inspector__row {
+.json-inspector__children--array > .json-inspector__row {
   grid-template-columns: 72px minmax(0, 1fr);
 }
 
